@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(pageTitle='동아리 관리', activeMenu='clubs', content=~{:: #clubs-content})}">
+<body>
+    <div id="clubs-content">
+        <div class="page-header">
+            <h1>동아리 관리</h1>
+            <p>사이트의 모든 동아리를 관리합니다.</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stat-cards-grid">
+            <div class="stat-card">
+                <div class="icon"><i class="fa-solid fa-people-group"></i></div>
+                <div class="info"><p class="title">총 동아리</p><p class="value" id="total-clubs">0</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="icon"><i class="fa-solid fa-check-circle"></i></div>
+                <div class="info"><p class="title">활성 동아리</p><p class="value" id="active-clubs">0</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="icon"><i class="fa-solid fa-users-line"></i></div>
+                <div class="info"><p class="title">총 회원 수</p><p class="value" id="total-members">0</p></div>
+            </div>
+        </div>
+
+        <!-- Table and Filters -->
+        <div class="content-panel" style="margin-top: 2rem;">
+            <div class="search-controls">
+                <input type="text" id="search-input" placeholder="동아리명으로 검색...">
+            </div>
+            <div class="table-wrapper" style="overflow-x: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th id="sort-by-id-btn" style="cursor: pointer;">ID <i class="fa-solid fa-sort"></i></th>
+                            <th>동아리명</th>
+                            <th>카테고리</th>
+                            <th>지역</th>
+                            <th>생성자</th>
+                            <th id="sort-by-members-btn" style="cursor: pointer;">회원 수 <i class="fa-solid fa-sort"></i></th>
+                            <th id="sort-by-created-btn" style="cursor: pointer;">생성일 <i class="fa-solid fa-sort"></i></th>
+                            <th class="actions">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody id="club-table-body">
+                        <!-- JS로 채워짐 -->
+                    </tbody>
+                </table>
+            </div>
+            <nav id="pagination-nav" class="mt-4" aria-label="Page navigation"></nav>
+        </div>
+
+        <!-- Detail Modal -->
+        <div id="detailModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fa-solid fa-people-group"></i> 동아리 상세 정보</h2>
+                    <button type="button" class="close-button" onclick="closeAdminModal('detailModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                     <div class="detail-grid">
+                        <strong>ID:</strong> <span id="detail-id"></span>
+                        <strong>동아리명:</strong> <span id="detail-name"></span>
+                        <strong>지역:</strong> <span id="detail-category"></span>
+                        <strong>생성자:</strong> <span id="detail-president"></span>
+                        <strong>회원 수:</strong> <span id="detail-members"></span>
+                        <strong>생성일:</strong> <span id="detail-created"></span>
+                        <strong>설명:</strong>
+                        <p id="detail-description"></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-modal" onclick="closeAdminModal('detailModal')">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            let currentPageClubs = [];
+            let currentPage = 1;
+            const pageSize = 10;
+            let currentSortField = 'id'; // Initial sort field (id, memberCount, created_at)
+            let sortOrders = {
+                'id': 'asc',
+                'memberCount': 'desc', // 회원수는 기본적으로 많은순(내림차순)
+                'created_at': 'desc'   // 생성일은 기본적으로 최신순(내림차순)
+            };
+
+            document.addEventListener('DOMContentLoaded', function() {
+                loadClubs(currentPage, currentSortField);
+                document.getElementById('search-input').addEventListener('input', () => loadClubs(1, currentSortField));
+
+                document.getElementById('sort-by-id-btn').addEventListener('click', function() {
+                    currentSortField = 'id';
+                    sortOrders['id'] = sortOrders['id'] === 'desc' ? 'asc' : 'desc';
+                    loadClubs(1, currentSortField);
+                });
+
+                document.getElementById('sort-by-members-btn').addEventListener('click', function() {
+                    currentSortField = 'memberCount';
+                    sortOrders['memberCount'] = sortOrders['memberCount'] === 'desc' ? 'asc' : 'desc';
+                    loadClubs(1, currentSortField);
+                });
+
+                document.getElementById('sort-by-created-btn').addEventListener('click', function() {
+                    currentSortField = 'created_at';
+                    sortOrders['created_at'] = sortOrders['created_at'] === 'desc' ? 'asc' : 'desc';
+                    loadClubs(1, currentSortField);
+                });
+            });
+
+            async function loadClubs(page, sortField) {
+                try {
+                    currentPage = page;
+                    const sortOrder = sortOrders[sortField]; // 해당 필드의 정렬 순서 가져오기
+                    const keyword = document.getElementById('search-input').value;
+
+                    let apiUrl = `/api/admin/clubs?page=${page}&size=${pageSize}&sortOrder=${sortOrder}&sortField=${sortField}`;
+                    if (keyword) apiUrl += `&keyword=${keyword}`;
+
+                    const response = await fetch(apiUrl);
+                    const result = await response.json();
+
+                    if (result.status === 1) {
+                        const pageData = result.data;
+                        currentPageClubs = pageData.content.map(club => ({
+                            id: club.id,
+                            name: club.clubName,
+                            category: club.categoryName || '미분류',
+                            region: `${club.provinceName || ''} ${club.cityName || ''}`.trim(),
+                            creatorName: club.creatorName,
+                            creatorUsername: club.creatorUsername,
+                            members: club.memberCount || 0,
+                            created: club.createdAt ? new Date(club.createdAt).toISOString().slice(0, 10) : '-',
+                            description: club.clubInfo || '설명이 없습니다.'
+                        }));
+                        
+                        updateStats(pageData);
+                        renderTable();
+                        renderPagination(pageData);
+                    } else {
+                        showModal('error', '조회 실패', '동아리 목록을 불러오는 데 실패했습니다.');
+                        document.getElementById('club-table-body').innerHTML = '<tr><td colspan="8" class="text-center py-5">데이터를 불러오는 데 실패했습니다.</td></tr>';
+                    }
+                } catch (error) {
+                    console.error('Error loading clubs:', error);
+                    showModal('error', '서버 오류', '서버 통신 중 오류가 발생했습니다.');
+                    document.getElementById('club-table-body').innerHTML = '<tr><td colspan="8" class="text-center py-5">서버 통신 중 오류가 발생했습니다.</td></tr>';
+                }
+            }
+
+            function updateStats(pageData) {
+                document.getElementById('total-clubs').textContent = pageData.totalElements;
+                document.getElementById('active-clubs').textContent = pageData.activeClubs;
+                document.getElementById('total-members').textContent = pageData.totalMembers;
+            }
+
+            function renderTable() {
+                const tableBody = document.getElementById('club-table-body');
+                tableBody.innerHTML = '';
+                if (currentPageClubs.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 3rem;">데이터가 없습니다.</td></tr>';
+                    return;
+                }
+                currentPageClubs.forEach(club => {
+                    const creator = club.creatorName ? `${club.creatorName} (${club.creatorUsername})` : '없음';
+                    const row = `
+                        <tr>
+                            <td>${club.id}</td>
+                            <td><strong>${club.name}</strong></td>
+                            <td>${club.category}</td>
+                            <td>${club.region}</td>
+                            <td>${creator}</td>
+                            <td>${club.members}명</td>
+                            <td>${club.created}</td>
+                            <td class="actions">
+                                <button class="btn btn-secondary btn-icon" onclick="showDetailModal(${club.id})"><i class="fa-solid fa-eye"></i></button>
+                                <button class="btn btn-danger btn-icon" onclick="deleteClub(${club.id}, '${club.name}')"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            }
+
+            function renderPagination(pageData) {
+                const nav = document.getElementById('pagination-nav');
+                nav.innerHTML = '';
+                if (!pageData || pageData.totalPages <= 1) return;
+
+                const ul = document.createElement('ul');
+                ul.className = 'pagination justify-content-center';
+
+                const currentPage = pageData.number;
+                const totalPages = pageData.totalPages;
+                const pageGroupSize = 5; // Number of page links to show at once
+
+                // Helper to create page items
+                const createPageItem = (content, pageNum, isDisabled = false, isActive = false) => {
+                    const li = document.createElement('li');
+                    li.className = `page-item ${isDisabled ? 'disabled' : ''} ${isActive ? 'active' : ''}`;
+                    const a = document.createElement('a');
+                    a.className = 'page-link';
+                    a.href = '#';
+                    a.innerHTML = content;
+                    if (!isDisabled && pageNum !== currentPage) {
+                        a.onclick = (e) => { e.preventDefault(); loadClubs(pageNum, currentSortField); };
+                    } else if (isDisabled || pageNum === currentPage) {
+                        a.onclick = (e) => e.preventDefault();
+                    }
+                    li.appendChild(a);
+                    return li;
+                };
+
+                // Previous button
+                ul.appendChild(createPageItem('<i class="fa-solid fa-chevron-left"></i>', currentPage - 1, currentPage === 1));
+
+                // Page numbers calculation
+                let startPage = Math.max(1, currentPage - Math.floor(pageGroupSize / 2));
+                let endPage = Math.min(totalPages, startPage + pageGroupSize - 1);
+
+                if (endPage - startPage + 1 < pageGroupSize) {
+                    startPage = Math.max(1, endPage - pageGroupSize + 1);
+                }
+
+                // Ellipsis and first page link
+                if (startPage > 1) {
+                    ul.appendChild(createPageItem(1, 1));
+                    if (startPage > 2) {
+                        ul.appendChild(createPageItem('...', startPage - 1, true));
+                    }
+                }
+
+                // Page number links
+                for (let i = startPage; i <= endPage; i++) {
+                    ul.appendChild(createPageItem(i, i, false, i === currentPage));
+                }
+
+                // Ellipsis and last page link
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        ul.appendChild(createPageItem('...', endPage + 1, true));
+                    }
+                    ul.appendChild(createPageItem(totalPages, totalPages));
+                }
+                
+                // Next button
+                ul.appendChild(createPageItem('<i class="fa-solid fa-chevron-right"></i>', currentPage + 1, currentPage === totalPages));
+
+                nav.appendChild(ul);
+            }
+
+            function showDetailModal(clubId) {
+                const club = currentPageClubs.find(c => c.id === clubId);
+                if (!club) return;
+                document.getElementById('detail-id').textContent = club.id;
+                document.getElementById('detail-name').textContent = club.name;
+                document.getElementById('detail-category').textContent = club.category;
+                document.getElementById('detail-president').textContent = club.creatorName ? `${club.creatorName} (${club.creatorUsername})` : '없음';
+                document.getElementById('detail-members').textContent = club.members + '명';
+                document.getElementById('detail-created').textContent = club.created;
+                document.getElementById('detail-description').textContent = club.description;
+                document.getElementById('detailModal').style.display = 'block';
+            }
+
+            async function deleteClub(clubId, clubName) {
+                showModal('confirm', '동아리 삭제', `정말로 '${clubName}' 동아리를 삭제하시겠습니까?`, async () => {
+                    try {
+                        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+                        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+                        const headers = { 'Content-Type': 'application/json' };
+                        headers[csrfHeader] = csrfToken;
+
+                        const response = await fetch('/api/admin/clubs/delete', {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify({ id: clubId })
+                        });
+                        const result = await response.json();
+                        if (result.status === 1) {
+                            showModal('success', '삭제 완료', '동아리가 삭제되었습니다.', () => {
+                                loadClubs(currentPage, currentSortField);
+                            });
+                        } else {
+                            showModal('error', '삭제 실패', '삭제 실패: ' + (result.message || '알 수 없는 오류'));
+                        }
+                    } catch (error) {
+                        console.error('Error deleting club:', error);
+                        showModal('error', '오류 발생', '동아리 삭제 중 오류가 발생했습니다.');
+                    }
+                });
+            }
+
+            function closeAdminModal(modalId) {
+                document.getElementById(modalId).style.display = 'none';
+            }
+
+            window.onclick = function(event) {
+                if (event.target.classList.contains('modal')) {
+                    closeAdminModal(event.target.id);
+                }
+            }
+        </script>
+    </div>
+</body>
+</html>

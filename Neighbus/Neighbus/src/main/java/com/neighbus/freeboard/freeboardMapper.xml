@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.neighbus.freeboard.FreeboardMapper">
+   
+    <!-- 게시글 작성 (freeboards 테이블에 INSERT) -->
+    <insert id="postInsert" parameterType="com.neighbus.freeboard.FreeboardDTO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO freeboards (
+            title,
+            content,
+            writer,
+            club_id
+        ) VALUES (
+            #{title},
+            #{content},
+            #{writer},
+            #{clubId}
+        )
+    </insert>
+
+    <!-- 게시글 목록 조회 -->
+    <select id="selectPostList" resultType="com.neighbus.freeboard.FreeboardDTO">
+        SELECT
+            f.id,
+            f.title,
+            f.content,
+            f.writer,
+            f.created_at AS createdAt,
+            f.view_count AS viewCount,
+            u.nickname AS writerNickname,
+            u.username AS writerUsername
+        FROM freeboards f
+        JOIN users u ON f.writer = u.id
+        ORDER BY f.created_at DESC
+        LIMIT 100
+    </select>
+
+    <!-- 게시글 검색 개수 조회 -->
+    <select id="searchCnt" resultType="int" parameterType="com.neighbus.freeboard.FreeboardDTO">
+        SELECT
+        	COUNT(*)
+        FROM
+        	freeboards f
+        	JOIN users u ON f.writer = u.id
+        where
+        	f.club_id in (select cm.club_id from club_members cm where cm.user_id=#{userId})
+            <if test="keyword != null and keyword != ''">
+                and (f.title like concat('%', #{keyword}, '%')
+                or u.nickname like concat('%', #{keyword}, '%'))
+            </if>
+             <if test="clubId gt 0">
+            	and
+            		f.club_id = #{clubId}
+            </if>
+    </select>
+    
+    <!-- 게시글 목록 조회 (페이징) -->
+	<select id="selectPostListWithPaging" parameterType="com.neighbus.freeboard.FreeboardDTO" resultType="HashMap">
+	    SELECT
+		    f.id,
+		    f.title,
+		    f.writer,
+		    f.created_at AS createdAt,
+		    f.view_count AS viewCount,
+		    u.nickname AS writerNickname,
+		    u.username AS writerUsername,
+		    c.club_name AS clubName,
+		    COUNT(DISTINCT fc.id) AS commentCount,
+		    COUNT(DISTINCT fr.id) AS likeCount
+		FROM freeboards f
+		JOIN users u 
+		    ON f.writer = u.id
+		JOIN clubs c 
+		    ON f.club_id = c.id
+		JOIN club_members cm
+		    ON cm.club_id = f.club_id
+		   AND cm.user_id = #{userId}
+		LEFT JOIN freeboard_comments fc
+		    ON fc.freeboard = f.id
+		LEFT JOIN freeboard_reactions fr
+		    ON fr.freeboard_id = f.id
+		   AND fr.reaction_type = 1
+		<where>
+		    <if test="keyword != null and keyword != ''">
+	            f.title LIKE CONCAT('%', #{keyword}, '%')
+		    </if>
+		    <if test="clubId gt 0">
+            	and
+            		f.club_id = #{clubId}
+            </if>
+		</where>
+		GROUP BY f.id
+		ORDER BY f.id DESC
+		LIMIT #{rowCnt} OFFSET #{beginRowNo}
+	</select>
+
+
+    <!-- 게시글 상세 조회 -->
+    <select id="selectPostDetail" parameterType="int" resultType="com.neighbus.freeboard.FreeboardDTO">
+    	<![CDATA[
+	        SELECT 
+	            f.id,
+	            f.title,
+	            f.content,
+	            f.writer,
+	            f.created_at AS createdAt,
+	            f.view_count AS viewCount,
+	            f.club_id AS clubId,
+	            c.club_name AS clubName,
+	            u.nickname AS writerNickname,
+	            u.image AS image,
+	            u.username AS writerUsername,
+	            (SELECT MAX(t1.id) FROM freeboards t1 WHERE t1.id < f.id and t1.club_id = (select t2.club_id from freeboards t2 where t2.id=f.id)) AS 'prev',
+	            (SELECT MIN(t3.id) FROM freeboards t3 WHERE t3.id > f.id and t3.club_id = (select t4.club_id from freeboards t4 where t4.id=f.id)) AS 'next'
+	        FROM freeboards f
+	        JOIN users u ON f.writer = u.id
+	        JOIN clubs c ON f.club_id = c.id
+	        WHERE f.id = #{id}
+        ]]>
+    </select>
+    
+    <!-- 조회수 증가 -->
+    <update id="incrementViewCount" parameterType="int">
+        UPDATE freeboards
+        SET view_count = view_count + 1
+        WHERE id = #{id}
+    </update>
+    <!--  댓글 목록 조회 추가 (테이블: freeboard_comments) -->      
+    <select id="selectCommentList" resultType="com.neighbus.freeboard.CommentDTO" parameterType="int">
+	    SELECT
+	        c.id,
+	        c.freeboard,
+	        c.parent,
+	        c.writer,
+	        c.content,
+	        c.created_at AS createdAt,
+	        u.username AS writerUsername,
+	        u.nickname AS nickname,
+	        u.image AS image
+	    FROM freeboard_comments c
+	    JOIN users u ON c.writer = u.id
+	    WHERE c.freeboard = #{freeboardId} 
+	    ORDER BY c.parent ASC, c.created_at ASC
+	</select>
+
+    <select id="selectCommentById" resultType="com.neighbus.freeboard.CommentDTO" parameterType="int">
+        SELECT * FROM freeboard_comments WHERE id = #{id}
+    </select>
+    
+    <!-- 게시글 수정 -->
+    <update id="updatePost" parameterType="com.neighbus.freeboard.FreeboardDTO">
+        UPDATE freeboards
+        SET
+        	club_id = #{clubId},
+            title = #{title},
+            content = #{content}
+        WHERE
+            id = #{id}
+    </update>
+    
+    <insert id="insertReaction" parameterType="HashMap">
+    	insert into freeboard_reactions (
+			freeboard_id,
+			user_id,
+			reaction_type
+		) values(
+			#{freeboardId},
+			#{userId},
+			#{reactionType}
+		)
+    </insert>
+    
+    <delete id="deleteReaction">
+		DELETE FROM
+			freeboard_reactions
+		WHERE
+			freeboard_id = #{freeboardId} AND 
+			     user_id = #{userId}
+	</delete>
+	
+	<update id="updateReaction">
+		UPDATE
+			freeboard_reactions
+		SET
+			reaction_type = #{reactionType}
+		WHERE
+			freeboard_id = #{freeboardId} AND 
+			     user_id = #{userId}
+	</update>
+    
+	<select id="selectReaction" parameterType="HashMap" resultType="HashMap">
+	    SELECT 
+	        IFNULL(SUM(CASE WHEN reaction_type = 1 THEN 1 ELSE 0 END), 0) as likeCount,
+	        IFNULL(SUM(CASE WHEN reaction_type = 2 THEN 1 ELSE 0 END), 0) as dislikeCount,
+	        MAX(CASE WHEN user_id = #{userId} THEN reaction_type ELSE NULL END) as userReaction
+	    FROM
+	        freeboard_reactions
+	    WHERE
+	        freeboard_id = #{freeboardId};
+	</select>
+</mapper>

@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.neighbus.gallery.GalleryMapper">
+
+	<resultMap id="galleryMap" type="map">
+	    <id property="ID" column="ID"/>
+	    <result property="TITLE" column="TITLE"/>
+	    <result property="CONTENT" column="CONTENT"/>
+    	<result property="WRITER_ID" column="WRITER_ID"/>
+	    <result property="WRITER" column="WRITER"/>
+	    <result property="WRITER_IMAGE" column="WRITER_IMAGE"/>
+	    <result property="CREATED_AT" column="CREATED_AT"/>
+	    <result property="VIEW_COUNT" column="VIEW_COUNT"/>
+	    <result property="CLUB_ID" column="CLUB_ID"/>
+	    <result property="PREV" column="PREV"/>
+	    <result property="NEXT" column="NEXT"/>
+	
+	    <collection property="IMAGES" ofType="map" select="getGalleryImage" column="ID"/>
+	    <collection property="COMMENTS" ofType="map" select="getCommentsByGalleryId" column="ID"/>
+	</resultMap>
+	
+	<!-- 대댓글용 resultMap -->
+	<resultMap id="replyMap" type="map">
+	    <id property="ID" column="ID"/>
+	    <result property="WRITER" column="WRITER"/>
+	    <result property="CONTENT" column="CONTENT"/>
+	    <result property="CREATED_AT" column="CREATED_AT"/>
+	    <result property="PARENT" column="PARENT"/>
+	</resultMap>
+	
+	<!-- 댓글용 resultMap -->
+	<resultMap id="commentMap" type="map">
+	    <id property="ID" column="ID"/>
+	    <result property="WRITER" column="WRITER"/>
+	    <result property="CONTENT" column="CONTENT"/>
+	    <result property="CREATED_AT" column="CREATED_AT"/>
+	    <result property="PARENT" column="PARENT"/>
+	    
+	    <!-- 대댓글 컬렉션 -->
+	    <collection property="REPLIES" ofType="map" select="getRepliesByCommentId" column="ID"/>
+	</resultMap>
+
+	<insert id="insertGallery" parameterType="com.neighbus.gallery.GalleryDTO">
+		insert into galleries (
+			title,
+			content,
+			writer,
+			club_id
+		) values (
+			#{title},
+			#{content},
+			#{writer},
+			#{clubId}
+		)
+	</insert>
+	
+	<insert id="insertGalleryImage" parameterType="com.neighbus.gallery.GalleryDTO">
+		insert into gallery_images (
+			gallery,
+			img
+		) values 
+		    <foreach collection="fileNameList" item="i" separator=",">
+		        (#{galleryId}, #{i})
+		    </foreach>
+	</insert>
+	
+	<insert id="insertComment" parameterType="HashMap">
+		insert into gallery_comments(
+			gallery,
+			parent,
+			writer,
+			content
+		) values (
+			#{gallery_id},
+			#{parent},
+			#{user_id},
+			#{comment}
+		)
+	</insert>
+	
+	<select id="getGalleryMaxId" parameterType="com.neighbus.gallery.GalleryDTO" resultType="int">
+		select max(id) from galleries where writer=#{writer}
+	</select>
+
+	<update id="updateGallery" parameterType="com.neighbus.gallery.GalleryDTO">
+		update
+			galleries
+		set 
+			title = #{title},
+			content = #{content}
+		where
+			id = #{galleryId}
+	</update>
+
+	<delete id="deleteGalleryImage" parameterType="com.neighbus.gallery.GalleryDTO">
+	    DELETE FROM gallery_images 
+	    WHERE img IN 
+	    <foreach collection="deletedExistingPathList" item="path" open="(" separator="," close=")">
+	        #{path}
+	    </foreach>
+	</delete>
+	
+	<delete id="deleteGalleryById" parameterType="int">
+		delete from galleries where id=#{galleryId}
+	</delete>
+
+	<select id="searchCnt" parameterType="com.neighbus.gallery.GalleryDTO" resultType="int">
+		select
+			count(*)
+		from
+			galleries
+		where
+			club_id in (select club_id from club_members where user_id=#{id})
+			<if test="keyword != null and keyword != ''">
+				and (title like concat('%', #{keyword}, '%')
+				or writer in (select id from users where nickname like concat('%', #{keyword}, '%')))
+			</if>
+             <if test="clubId gt 0">
+            	and
+            		club_id = #{clubId}
+            </if>
+	</select>
+
+	<select id="getGalleryList" parameterType="com.neighbus.gallery.GalleryDTO" resultMap="galleryMap">
+	    select
+	        g.id as ID,
+	        g.title as TITLE,
+	        g.content as CONTENT,
+	        u.nickname as WRITER,
+	        g.created_at as CREATED_AT,
+	        g.view_count as VIEW_COUNT
+	    from
+	    	galleries g
+	    	left join users u
+	    	on g.writer = u.id
+		where
+			g.club_id in (select club_id from club_members where user_id=#{id})
+			<if test="keyword != null and keyword != ''">
+				and (g.title like concat('%', #{keyword}, '%')
+				or g.writer in (select id from users where nickname like concat('%', #{keyword}, '%')))
+			</if>
+             <if test="clubId gt 0">
+            	and
+            		g.club_id = #{clubId}
+            </if>
+	    order by id desc
+	    limit #{rowCnt} offset #{beginRowNo}
+	</select>
+	
+	<select id="getGalleryImage" resultType="map">
+	    select
+	        gallery as GALLERY,
+	        id as ID,
+	        img as IMG
+	    from gallery_images
+	    where gallery = #{ID}
+	    order by id desc
+	</select>
+	
+	<select id="getGalleryImageById" parameterType="int" resultType="HashMap">
+		select
+	        gallery as GALLERY,
+	        id as ID,
+	        img as IMG
+	    from gallery_images
+	    where gallery = #{galleryId}
+	</select>
+	
+	<select id="getGalleryById" parameterType="int" resultMap="galleryMap">
+    	<![CDATA[
+		select
+	        g.id as ID,
+	        g.title as TITLE,
+	        g.content as CONTENT,
+	        (select nickname from users u where u.id=g.writer) as WRITER,
+	        (select image from users u where u.id=g.writer) as WRITER_IMAGE,
+	        g.writer as WRITER_ID,
+	        DATE_FORMAT(g.created_at, '%Y-%m-%d %H:%i') as CREATED_AT,
+	        g.view_count as VIEW_COUNT,
+	        g.club_id as CLUB_ID,
+			(select max(g1.id) from galleries g1 where g1.id<g.id and g1.club_id = (select g2.club_id from galleries g2 where g2.id=g.id)) as 'PREV',
+			(select min(g3.id) from galleries g3 where g3.id>g.id and g3.club_id = (select g4.club_id from galleries g4 where g4.id=g.id)) as 'NEXT'
+		from
+			galleries g
+		where
+			g.id=#{id}
+        ]]>
+	</select>
+	
+	<select id="getCommentsByGalleryId" parameterType="int" resultMap="commentMap">
+	    select
+	        c.id as ID,
+	        (select u.nickname from users u where u.id = c.writer) as WRITER,
+	        (select u.image from users u where u.id = c.writer) as WRITER_IMAGE,
+	        c.content as CONTENT,
+	        DATE_FORMAT(c.created_at, '%Y-%m-%d %H:%i') as CREATED_AT,
+	        c.parent as PARENT
+	    from gallery_comments c
+	    where c.gallery = #{id}
+	    order by c.id asc
+	</select>
+
+	<select id="getRepliesByCommentId" parameterType="int" resultMap="replyMap">
+	    select
+	        c.id as ID,
+	        (select nickname from users u where u.id = c.writer) as WRITER,
+	        c.content as CONTENT,
+	        DATE_FORMAT(c.created_at, '%Y-%m-%d %H:%i') as CREATED_AT,
+	        c.parent as PARENT
+	    from gallery_comments c
+	    where c.parent = #{id}
+	    order by c.id asc
+	</select>
+	
+	<update id="updateViewCount" parameterType="int">
+		update galleries set view_count=view_count+1 where id=#{id}
+	</update>
+	
+	<insert id="insertReaction" parameterType="HashMap">
+    	insert into gallery_reactions (
+			gallery_id,
+			user_id,
+			reaction_type
+		) values(
+			#{galleryId},
+			#{userId},
+			#{reactionType}
+		)
+    </insert>
+    
+    <delete id="deleteReaction">
+		DELETE FROM
+			gallery_reactions
+		WHERE
+			gallery_id = #{galleryId} AND 
+			     user_id = #{userId}
+	</delete>
+	
+	<update id="updateReaction">
+		UPDATE
+			gallery_reactions
+		SET
+			reaction_type = #{reactionType}
+		WHERE
+			gallery_id = #{galleryId} AND 
+			     user_id = #{userId}
+	</update>
+	
+	<select id="selectReaction" parameterType="HashMap" resultType="HashMap">
+		SELECT 
+	        IFNULL(SUM(CASE WHEN reaction_type = 1 THEN 1 ELSE 0 END), 0) as likeCount,
+	        IFNULL(SUM(CASE WHEN reaction_type = 2 THEN 1 ELSE 0 END), 0) as dislikeCount,
+	        MAX(CASE WHEN user_id = #{userId} THEN reaction_type ELSE NULL END) as userReaction
+	    FROM
+	        gallery_reactions
+	    WHERE
+	        gallery_id = #{galleryId};
+	</select>
+	
+	<select id="selectGalleryImagesByWriter" parameterType="int" resultType="string">
+	    SELECT i.img 
+	    FROM gallery_images i
+	    JOIN galleries g ON i.gallery = g.id
+	    WHERE g.writer = #{userId}
+	</select>
+</mapper>

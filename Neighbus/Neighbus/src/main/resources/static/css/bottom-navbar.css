@@ -1,0 +1,124 @@
+/* =================================================================
+   Bottom Navbar Styles
+   - Mobile-first design, integrated with the main theme.
+   ================================================================= */
+
+/* 1. Main Navbar Container
+----------------------------------------------------------------- */
+.nb-bottom-nav {
+    display: none; /* Hidden by default on desktop */
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: calc(65px + env(safe-area-inset-bottom)); /* Adjust height for safe area */
+    background-color: var(--card-bg, #FFFBF7);
+    border-top: 1px solid var(--border-color, #E8D7C3);
+    box-shadow: 0 -2px 15px var(--shadow-color, rgba(166, 124, 82, 0.1));
+    z-index: 1000;
+    box-sizing: border-box;
+    
+    /* Add padding for device safe areas (notches, home bars) */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+    transition: transform 0.3s ease-in-out; /* Add transition for smooth animation */
+}
+
+/* 2. Navigation Items
+----------------------------------------------------------------- */
+.nb-bottom-nav__items {
+    display: flex;
+    justify-content: space-around;
+    align-items: stretch; /* Stretch items to fill height */
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+.nb-bottom-nav__item {
+    flex: 1;
+    display: flex;
+}
+
+/* 3. Navigation Links
+----------------------------------------------------------------- */
+.nb-bottom-nav__link {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: var(--text-light, #A1887F);
+    padding: 4px 0;
+    transition: color 0.3s ease, transform 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.nb-bottom-nav__link i {
+    font-size: 22px; /* Icon size adjusted for 6 items */
+    margin-bottom: 4px;
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nb-bottom-nav__label {
+    font-size: 10px; /* Label size adjusted for 6 items */
+    font-weight: 500;
+    transition: font-weight 0.2s ease;
+}
+
+/* 4. Active & Interaction States
+----------------------------------------------------------------- */
+.nb-bottom-nav__link.active {
+    color: var(--primary, #A67C52);
+}
+
+.nb-bottom-nav__link.active i {
+    transform: scale(1.1);
+}
+
+.nb-bottom-nav__link.active .nb-bottom-nav__label {
+    font-weight: 700;
+}
+
+.nb-bottom-nav__link:active i {
+    transform: scale(0.9);
+}
+
+/* 5. Notification Badge
+----------------------------------------------------------------- */
+.nav-badge {
+    position: absolute;
+    top: 5px;
+    right: 25%;
+    transform: translateX(50%);
+    background-color: var(--danger, #C87E7E);
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 5px;
+    border-radius: 10px;
+    line-height: 1;
+    border: 2px solid var(--card-bg, #FFFBF7);
+}
+
+/* 6. Responsive Visibility (Expanded to tablets)
+----------------------------------------------------------------- */
+@media (max-width: 991px) { /* Breakpoint changed to 991px to include tablets */
+    .nb-bottom-nav {
+        display: block; /* Show on mobile and tablets */
+    }
+    
+    /* Add padding to the body to prevent content from being hidden by the navbar */
+    body {
+        /* Adjust padding based on navbar height + safe area */
+        padding-bottom: calc(65px + env(safe-area-inset-bottom));
+    }
+}
+
+/* Hide bottom nav when chatbot is open by sliding it down */
+body.chatbot-is-open .nb-bottom-nav {
+    transform: translateY(100%);
+}

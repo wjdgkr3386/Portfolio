@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<div th:fragment="bottom-nav">
+
+    <style>
+        /* 1. PC 화면에서는 무조건 숨김 */
+        #nb-fixed-nav-wrapper {
+            display: none !important;
+        }
+
+        /* 2. 모바일 화면 (768px 이하) 설정 */
+        @media (max-width: 768px) {
+            /* 하단 바 전체 컨테이너 */
+            #nb-fixed-nav-wrapper {
+                display: block !important;
+                position: fixed !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 65px !important;
+                background-color: #ffffff !important;
+                border-top: 1px solid #e0e0e0 !important;
+                z-index: 2147483647 !important; /* 최상단 */
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.05) !important;
+                box-sizing: border-box !important;
+            }
+
+            /* UL 태그 (가로 정렬) */
+            #nb-fixed-nav-wrapper .nb-fixed-items {
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                width: 100% !important;
+                height: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                list-style: none !important;
+            }
+
+            /* LI 태그 (균등 분배) */
+            #nb-fixed-nav-wrapper .nb-fixed-item {
+                flex: 1 !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                height: 100% !important;
+                text-align: center !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            /* A 태그 (링크 스타일 초기화) */
+            #nb-fixed-nav-wrapper .nb-fixed-link {
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: center !important;
+                text-decoration: none !important;
+                color: #999999 !important;
+                width: 100% !important;
+                height: 100% !important;
+                background: transparent !important;
+                border: none !important;
+            }
+
+            /* 아이콘 크기 */
+            #nb-fixed-nav-wrapper .nb-fixed-link i {
+                font-size: 20px !important;
+                margin-bottom: 4px !important;
+                display: block !important;
+                line-height: 1 !important;
+                color: inherit !important;
+            }
+
+            /* 텍스트 크기 */
+            #nb-fixed-nav-wrapper .nb-fixed-label {
+                font-size: 10px !important;
+                font-weight: 500 !important;
+                line-height: 1 !important;
+                color: inherit !important;
+                white-space: nowrap !important;
+            }
+
+            /* 활성화된 메뉴 색상 (갈색) */
+            #nb-fixed-nav-wrapper .nb-fixed-link.active {
+                color: #A67C52 !important;
+            }
+            #nb-fixed-nav-wrapper .nb-fixed-link.active i {
+                color: #A67C52 !important;
+                font-weight: 700 !important;
+            }
+
+            /* 알림 배지 */
+            .nb-fixed-badge {
+                position: absolute;
+                top: 5px;
+                right: 25%;
+                background-color: #ff4757;
+                color: white;
+                font-size: 9px;
+                padding: 2px 5px;
+                border-radius: 10px;
+                line-height: 1;
+                border: 1px solid #fff;
+            }
+        }
+    </style>
+
+    <nav id="nb-fixed-nav-wrapper">
+        <ul class="nb-fixed-items">
+            <li class="nb-fixed-item">
+                <a href="/" class="nb-fixed-link" data-path="/">
+                    <i class="bi bi-house-door-fill"></i>
+                    <span class="nb-fixed-label">홈</span>
+                </a>
+            </li>
+
+            <li class="nb-fixed-item">
+                <a href="/club" class="nb-fixed-link" data-path="/club">
+                    <i class="bi bi-people-fill"></i>
+                    <span class="nb-fixed-label">동아리</span>
+                </a>
+            </li>
+
+            <li class="nb-fixed-item">
+                <a href="/gallery" class="nb-fixed-link" data-path="/gallery">
+                    <i class="bi bi-images"></i>
+                    <span class="nb-fixed-label">갤러리</span>
+                </a>
+            </li>
+
+            <li class="nb-fixed-item">
+                <a href="/freeboard" class="nb-fixed-link" data-path="/freeboard">
+                    <i class="bi bi-chat-dots-fill"></i>
+                    <span class="nb-fixed-label">게시판</span>
+                </a>
+            </li>
+
+            <li class="nb-fixed-item" sec:authorize="isAuthenticated()">
+                <a href="/friend/list" class="nb-fixed-link" data-path="/friend">
+                    <i class="bi bi-chat-left-text-fill"></i>
+                    <span class="nb-fixed-label">채팅</span>
+                </a>
+            </li>
+            
+            <li class="nb-fixed-item" sec:authorize="isAuthenticated()">
+                <a href="/mypage" class="nb-fixed-link" data-path="/mypage">
+                    <i class="bi bi-person-fill"></i>
+                    <span class="nb-fixed-label">마이</span>
+                </a>
+            </li>
+
+            <li class="nb-fixed-item" sec:authorize="!isAuthenticated()">
+                 <a href="/account/login" class="nb-fixed-link" data-path="/account">
+                    <i class="bi bi-person-circle"></i>
+                    <span class="nb-fixed-label">로그인</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 현재 메뉴 활성화 (색상 변경)
+            const currentPath = window.location.pathname;
+            const links = document.querySelectorAll('#nb-fixed-nav-wrapper .nb-fixed-link[data-path]');
+            
+            links.forEach(link => {
+                const path = link.getAttribute('data-path');
+                if (path === '/' && currentPath === '/') {
+                    link.classList.add('active');
+                } else if (path !== '/' && currentPath.startsWith(path)) {
+                    link.classList.add('active');
+                }
+            });
+
+            // 모바일에서 하단바가 본문을 가리지 않도록 body 패딩 추가
+            if (window.innerWidth <= 768) {
+                document.body.style.paddingBottom = '70px';
+            }
+        });
+    </script>
+</div>
+</html>

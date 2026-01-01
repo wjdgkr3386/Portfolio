@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neighbus.mypage.MyPageMapper">
+
+<!-- 내 정보 (AccountDTO 매핑) -->
+  <select id="getMyInfo" parameterType="string" resultType="HashMap">
+    SELECT 
+        u.id AS id,
+        u.name AS name,
+        u.username AS username,
+        u.password AS password,
+        u.address AS address,
+        u.phone AS phone,
+        u.email AS email,
+        u.image AS image,
+        CASE u.grade
+   		WHEN 0 THEN '관리자'
+   		WHEN 1 THEN '인증 필요 유저'
+   		WHEN 2 THEN '인증 유저'
+		END AS grade,
+        u.birth AS birth,
+        u.sex AS sex,
+        u.user_uuid AS userUuid,
+        u.nickname AS nickname,
+        r.city AS city,
+        p.province AS province
+    FROM users u
+    LEFT JOIN cities r ON u.city = r.id
+    LEFT JOIN provinces p ON u.province = p.id
+    WHERE u.username = #{username}
+  </select>
+  <!--탈퇴-->
+  <delete id="delMyUser" parameterType="com.neighbus.account.AccountDTO">
+		DELETE FROM users
+		WHERE username = #{username}
+	</delete>
+
+  <!-- 내가 쓴 글 목록 -->
+  <select id="getMyPosts" parameterType="string" resultType="map">
+    SELECT
+        g.id AS postId,
+        g.title AS title,
+       	g.created_at AS createdAt,
+       	'gallery' AS postType
+    FROM galleries g
+    JOIN users u ON g.writer = u.id
+    WHERE u.username = #{username}
+
+    UNION ALL
+
+    SELECT
+        f.id AS postId,
+        f.title AS title,
+        f.created_at AS createdAt,
+        'freeboard' AS postType
+    FROM freeboards f
+    JOIN users u ON f.writer = u.id
+    WHERE u.username = #{username}
+
+    ORDER BY createdAt DESC
+  </select>
+
+  <!-- 내가 쓴 댓글 -->
+  <select id="getMyComments" parameterType="string" resultType="map">
+    SELECT
+        c.id AS commentId,
+        c.content AS content,
+        c.created_at AS createdAt,
+        c.gallery AS postId,
+        'gallery' AS commentType
+    FROM gallery_comments c
+    JOIN users u ON c.writer = u.id
+    WHERE u.username = #{username}
+
+    UNION ALL
+
+    SELECT
+        fc.id AS commentId,
+        fc.content AS content,
+        fc.created_at AS createdAt,
+        fc.freeboard AS postId,
+        'freeboard' AS commentType
+    FROM freeboard_comments fc
+    JOIN users u ON fc.writer = u.id
+    WHERE u.username = #{username}
+
+    ORDER BY createdAt DESC
+  </select>
+	
+	<select id="checkFriend" parameterType="HashMap" resultType="int">
+	   select count(*) from friends where my_id = #{id} and friend_id = (select id from users where user_uuid=#{friendCode})
+	</select>
+	
+	<select id="checkUser" parameterType="HashMap" resultType="int">
+	   select count(*) from users where user_uuid = #{friendCode}
+	</select>
+
+	<insert id="addFriend" parameterType="HashMap">
+		insert into friend_state (sender, receiver, state) values (#{id}, (select id from users where user_uuid=#{friendCode}), 1)
+	</insert>
+	
+	<select id="getFriendState" parameterType="int" resultType="HashMap">
+		select
+			u.nickname as "senderName",
+			fs.sender as "sender",
+			fs.state as "state",
+			fs.created_at as "created_at"
+		from
+			friend_state fs LEFT JOIN users u ON fs.sender=u.id
+		where
+			fs.receiver = #{id}
+			and
+			fs.state = 1
+		order by
+			fs.created_at desc
+	</select>
+	
+	<insert id="insertFriend" parameterType="HashMap">
+		insert into friends (my_id, friend_id) values (#{id}, #{sender})
+	</insert>
+	<update id="updateFriendStateAccept" parameterType="HashMap">
+		update friend_state set state=2 where sender=#{sender} and receiver=#{id}
+	</update>
+	<update id="updateFriendStateReject" parameterType="HashMap">
+		update friend_state set state=3 where sender=#{sender} and receiver=#{id}
+	</update>
+
+	<!-- 프로필 수정 -->
+	<update id="updateProfile" parameterType="HashMap">
+		UPDATE users
+		SET
+		nickname = #{nickname},
+		province = #{province},
+		city = #{city}		
+		WHERE id = #{id}
+	</update>
+
+	<!-- 프로필 이미지 업데이트 -->
+	<update id="updateProfileImage" parameterType="HashMap">
+		UPDATE users
+		SET image = #{image}
+		WHERE id = #{id}
+	</update>
+
+	<!-- 회원 탈퇴를 위한 데이터 삭제 -->
+    <delete id="delMyUserInquiryComments" parameterType="java.lang.Integer">
+        DELETE ic FROM inquiry_comments ic JOIN inquiries i ON ic.inquiry = i.id WHERE i.writer = #{userId}
+    </delete>
+    <delete id="delMyUserInquiries" parameterType="java.lang.Integer">
+        DELETE FROM inquiries WHERE writer = #{userId}
+    </delete>
+    <delete id="delMyUserGalleryComments" parameterType="java.lang.Integer">
+        DELETE FROM gallery_comments WHERE writer = #{userId}
+    </delete>
+    <delete id="delMyUserFreeboardComments" parameterType="java.lang.Integer">
+        DELETE FROM freeboard_comments WHERE writer = #{userId}
+    </delete>
+    <delete id="delMyUserGalleries" parameterType="java.lang.Integer">
+        DELETE FROM galleries WHERE writer = #{userId}
+    </delete>
+    <delete id="delMyUserFreeboards" parameterType="java.lang.Integer">
+        DELETE FROM freeboards WHERE writer = #{userId}
+    </delete>
+    <delete id="delMyUserFriends" parameterType="java.lang.Integer">
+        DELETE FROM friends WHERE my_id = #{userId} OR friend_id = #{userId}
+    </delete>
+    <delete id="delMyUserFriendState" parameterType="java.lang.Integer">
+        DELETE FROM friend_state WHERE sender = #{userId} OR receiver = #{userId}
+    </delete>
+    <delete id="delMyUserInquiryCommentsByWriter" parameterType="java.lang.Integer">
+        DELETE FROM inquiry_comments WHERE writer = #{userId}
+    </delete>
+    <delete id="delMyUserClubs" parameterType="java.lang.Integer">
+        DELETE FROM clubs WHERE write_id = #{userId}
+    </delete>
+    <delete id="delMyUserNotices" parameterType="java.lang.Integer">
+        DELETE FROM notices WHERE writer = #{userId}
+    </delete>
+</mapper>

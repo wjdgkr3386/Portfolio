@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게시글 작성</title>
+    <link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <style>
+        :root {
+            --primary: #A67C52; --primary-dark: #8D6E63; --primary-light: #C9A88A;
+            --bg-ivory: #FFF8F0; --bg-warm: #FFF5EB; --bg-cream: #FAF0E6;
+            --card-bg: #FFFBF7; --text-primary: #5D4037; --text-secondary: #8D6E63;
+            --text-light: #A1887F; --border-color: #E8D7C3; --shadow-color: rgba(166, 124, 82, 0.15);
+            --white: #FFFFFF; --accent-green: #7BA372; --accent-red: #C87E7E;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { margin: 0; padding: 100px 0 60px; font-family: 'SUIT', sans-serif; background: linear-gradient(165deg, var(--bg-ivory) 0%, var(--bg-warm) 50%, var(--bg-cream) 100%); min-height: 100vh; }
+        .form-wrapper { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+        .contentForm { background: var(--card-bg) !important; border-radius: 24px; box-shadow: 0 8px 24px rgba(166, 124, 82, 0.12); padding: 3.5rem !important; border: 1px solid var(--border-color); position: relative; }
+        .contentForm::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 50%, var(--primary) 100%); }
+        .form-title { text-align: center; font-size: 2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 2rem; border-bottom: 2px solid var(--border-color); padding-bottom: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 12px; }
+
+        .input-wrapper { width: 100%; display: flex; gap: 12px; margin-bottom: 1.5rem; }
+        .input-group-custom { position: relative; flex: 1; }
+        .input-group-custom.club-select { min-width: 200px; max-width: 220px; }
+        .input-label { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+        #clubSelect, .title { width: 100%; height: 52px; border: 2px solid var(--border-color); border-radius: 12px; padding: 0 16px; background-color: var(--white); outline: none; }
+        .title { font-size: 18px; font-weight: 600; }
+
+        /* Toolbar */
+        .toolbar, .toolbarHeader { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; border-radius: 16px; background: linear-gradient(135deg, var(--card-bg) 0%, var(--bg-cream) 100%); overflow: visible !important; }
+        .toolbar { margin: 24px 0; padding: 15px 20px !important; box-shadow: 0 2px 12px rgba(166, 124, 82, 0.08); }
+        .toolbarHeader { position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; padding: 10px 20px !important; border-radius: 0; border-bottom: 1px solid var(--border-color); background: rgba(255, 251, 247, 0.96); backdrop-filter: blur(8px); box-shadow: 0 4px 15px rgba(166, 124, 82, 0.15); display: none; justify-content: center; animation: slideDown 0.3s ease-out; }
+        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+
+        .toolbar-group { display: flex; gap: 6px; padding: 6px 10px; background: var(--white); border-radius: 10px; border: 1px solid var(--border-color); align-items: center; flex-shrink: 0; }
+        .toolbar-divider { width: 1px; height: 28px; background: var(--border-color); margin: 0 2px; }
+        .tool { height: 38px; min-width: 38px; font-size: 13px; background: var(--white); border: 1px solid var(--border-color); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; padding: 0 10px; font-weight: 600; transition: 0.25s; color: var(--text-primary); }
+        .tool:hover { background: var(--primary); color: white; transform: translateY(-2px); }
+
+        .color-menu { min-width: 210px; padding: 15px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); border: 1px solid var(--border-color); }
+        .color-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 12px; }
+        .color-option { width: 30px; height: 30px; border-radius: 8px; cursor: pointer; border: 1px solid rgba(0,0,0,0.05); transition: transform 0.2s; }
+        .color-option:hover { transform: scale(1.15); border-color: #000; }
+        .custom-color-btn { width: 100%; height: 38px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-warm); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+
+        .editor { width: 100%; min-height: 500px; padding: 24px; font-size: 16px; outline: none; border: 2px solid var(--border-color); border-radius: 12px; background: var(--white); line-height: 1.8; color: var(--text-primary); }
+        .editor img { display: block; width: 100%; height: auto; margin: 20px 0; border-radius: 12px; } 
+        .editor hr { border: none; border-top: 2px solid var(--border-color); margin: 25px 0; display: block; width: 100%; }
+
+        .bottomSavebar { display: flex; justify-content: space-between; gap: 15px; margin-top: 40px; padding-top: 30px; border-top: 2px solid var(--border-color); }
+        .bottomCancel, .bottomSave { height: 56px; width: 48%; display: flex; justify-content: center; align-items: center; gap: 8px; font-weight: 700; border-radius: 14px; cursor: pointer; transition: 0.3s; font-size: 16px; }
+        .bottomCancel { background: var(--white); border: 2px solid var(--border-color); color: var(--text-primary); }
+        .bottomSave { background: linear-gradient(135deg, var(--accent-green) 0%, #6B8E63 100%); color: white; }
+
+        /* 모달 디자인 */
+        .custom-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(93, 64, 55, 0.4); backdrop-filter: blur(6px); z-index: 9999; justify-content: center; align-items: center; }
+        .custom-modal-overlay.active { display: flex; }
+        .custom-modal { background: var(--card-bg); border-radius: 24px; padding: 45px 35px; max-width: 400px; width: 90%; text-align: center; border: 1px solid var(--border-color); box-shadow: 0 15px 50px rgba(93, 64, 55, 0.2); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-title { font-size: 22px; font-weight: 800; color: var(--text-primary); margin-bottom: 12px; }
+        .modal-message { font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 30px; }
+        .modal-buttons { display: flex; gap: 12px; justify-content: center; }
+        .modal-btn { padding: 14px 28px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; min-width: 120px; }
+        .modal-btn.primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(166, 124, 82, 0.3); }
+        .modal-btn.primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        .modal-btn.secondary { background: var(--white); color: var(--text-secondary); border: 2px solid var(--border-color); }
+
+        @media screen and (max-width: 768px) {
+            .input-wrapper { flex-direction: column; }
+            .tool span { display: none; }
+            .contentForm { padding: 1.5rem !important; }
+        }
+    </style>
+
+    <script th:inline="javascript">
+        let savedRange = null;
+        let editor;
+
+        function updateSavedRange() {
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                if (editor.contains(range.commonAncestorContainer)) savedRange = range.cloneRange();
+            }
+        }
+
+        function restoreSelection() {
+            editor.focus();
+            if (savedRange) {
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(savedRange);
+            }
+        }
+
+        function execCommand(command, value = '') {
+            restoreSelection();
+            document.execCommand(command, false, value);
+            updateSavedRange();
+        }
+
+        function setFontColor(color) { execCommand('foreColor', color); }
+        function alignText(alignType) { execCommand(alignType, null); }
+        function fontStyle(font) { execCommand('fontName', font); }
+        function setFontSize(size) { execCommand('fontSize', size); }
+
+        function inputHr() {
+            restoreSelection();
+            const hr = document.createElement('hr');
+            hr.style.borderTop = '2px solid #E8D7C3';
+            savedRange.deleteContents();
+            savedRange.insertNode(hr);
+            savedRange.setStartAfter(hr);
+            savedRange.collapse(false);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(savedRange);
+            updateSavedRange();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            editor = document.querySelector('.editor');
+            ['keyup', 'click', 'mouseup', 'focus', 'blur'].forEach(evt => 
+                editor.addEventListener(evt, updateSavedRange)
+            );
+
+            document.querySelectorAll('.img-input').forEach(input => {
+                input.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            restoreSelection();
+                            const img = document.createElement('img');
+                            img.src = event.target.result;
+                            const nextLine = document.createElement('div');
+                            nextLine.innerHTML = '<br>';
+                            const fragment = document.createDocumentFragment();
+                            fragment.appendChild(img);
+                            fragment.appendChild(nextLine);
+                            savedRange.deleteContents();
+                            savedRange.insertNode(fragment);
+                            savedRange.setStart(nextLine, 0);
+                            savedRange.collapse(true);
+                            const selection = window.getSelection();
+                            selection.removeAllRanges();
+                            selection.addRange(savedRange);
+                            e.target.value = '';
+                            updateSavedRange();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            });
+
+            window.addEventListener("scroll", () => {
+                const header = document.querySelector(".toolbarHeader");
+                header.style.display = window.scrollY > 350 ? "flex" : "none";
+            });
+        });
+
+        function showModal(type, title, message, callback) {
+            const overlay = document.getElementById('customModalOverlay');
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            const buttons = document.getElementById('modalButtons');
+            if (type === 'confirm') {
+                buttons.innerHTML = `<button class="modal-btn secondary" onclick="closeModal()">취소</button><button class="modal-btn primary" onclick="confirmAction()">확인</button>`;
+                window.confirmCallback = callback;
+            } else {
+                buttons.innerHTML = `<button class="modal-btn primary" onclick="closeModal(true)">확인</button>`;
+                window.modalCallback = callback;
+            }
+            overlay.classList.add('active');
+        }
+
+        function closeModal(exec) { 
+            document.getElementById('customModalOverlay').classList.remove('active'); 
+            if (exec && window.modalCallback) window.modalCallback(); 
+        }
+
+        function confirmAction() { closeModal(); if (window.confirmCallback) window.confirmCallback(); }
+
+        // --- [추가됨] HTML 공백 및 빈 태그 정리 로직 ---
+        function cleanEditorContent(html) {
+            // 1. 양 끝의 <br>, 빈 <div>, 공백문자 등을 정규식으로 제거
+            let clean = html.trim();
+            // 앞부분 제거
+            clean = clean.replace(/^(?:<br>|<div><br><\/div>|&nbsp;|\s)+/gi, '');
+            // 뒷부분 제거
+            clean = clean.replace(/(?:<br>|<div><br><\/div>|&nbsp;|\s)+$/gi, '');
+            return clean;
+        }
+
+        function uploadPost() {
+            // 내용 정리 적용
+            const rawContent = editor.innerHTML;
+            const content = cleanEditorContent(rawContent);
+            
+            const title = document.querySelector("[name='title']").value.trim();
+            const club = document.getElementById('clubSelect') ? document.getElementById('clubSelect').value : null;
+
+            if (club === '0') { showModal('warning', '알림', '동아리를 선택해주세요.'); return; }
+            if (title === '') { showModal('warning', '알림', '제목을 입력해주세요.'); return; }
+            // 이미지가 없고 텍스트도 없는 경우 체크
+            if (content === '' && !editor.querySelector('img')) { 
+                showModal('warning', '알림', '내용을 입력해주세요.'); 
+                return; 
+            }
+
+            document.querySelector("[name='content']").value = content;
+            const id = document.querySelector("input[name='id']").value;
+            const url = (id && id !== "0") ? "/freeboard/edit/" + id : "/freeboard/write";
+            const formData = new FormData(document.forms['contentForm']);
+            
+            // 전송 데이터에도 정리된 content 반영
+            formData.set('content', content);
+
+            fetch(url, { method: 'POST', body: formData }).then(res => res.json()).then(data => {
+                if (parseInt(data) > 0) showModal('success', '작성 완료', '게시글이 성공적으로 저장되었습니다.', () => location.href = '/freeboard/list');
+                else showModal('error', '실패', '저장에 실패했습니다.');
+            });
+        }
+    </script>
+</head>
+<body>
+<div class="form-wrapper">
+    <form class="contentForm" name="contentForm">
+        <input type="hidden" name="id" th:value="${post != null ? post.id : 0}">
+        <input type="hidden" name="content">
+
+        <div class="form-title"><i class="bi bi-pencil-square"></i> <span th:text="${post == null} ? '새 게시글 작성' : '게시글 수정'">새 게시글 작성</span></div>
+
+        <div class="input-wrapper">
+            <div class="input-group-custom club-select" th:if="${post == null}">
+                <label class="input-label"><i class="bi bi-people-fill"></i> 동아리</label>
+                <select id="clubSelect" name="clubId">
+                    <option value="0">동아리 선택</option>
+                    <option th:each="club : ${myClubList}" th:value="${club.id}" th:text="${club.clubName}"></option>
+                </select>
+            </div>
+            <input th:if="${post != null}" type="hidden" name="clubId" th:value="${post.clubId}">
+            <div class="input-group-custom">
+                <label class="input-label"><i class="bi bi-card-heading"></i> 제목</label>
+                <input type="text" name="title" class="title" placeholder="제목을 입력하세요" th:value="${post != null ? post.title : ''}">
+            </div>
+        </div>
+        
+        <div class="toolbar" onmousedown="if(!event.target.closest('.color-menu') && !event.target.tagName.includes('SELECT')) event.preventDefault()">
+            <div class="toolbar-group">
+                <button type="button" class="tool" onclick="document.getElementById('fileInput').click()"><i class="fa-regular fa-image"></i><span>이미지</span></button>
+                <input type="file" id="fileInput" class="img-input" style="display:none;" accept="image/*">
+                <button type="button" class="tool" onclick="inputHr()"><i class="fa-solid fa-minus"></i><span>구분선</span></button>
+            </div>
+            <div class="toolbar-divider"></div>
+            <div class="toolbar-group">
+                <select class="tool" onchange="fontStyle(this.value)"><option value="sans-serif">기본글꼴</option><option value="Malgun Gothic">맑은고딕</option><option value="NanumSquare">나눔스퀘어</option></select>
+                <select class="tool" onchange="setFontSize(this.value)"><option value="3">16px</option><option value="4" selected>18px</option><option value="5">24px</option></select>
+            </div>
+            <div class="toolbar-divider"></div>
+            <div class="toolbar-group dropdown">
+                <button type="button" class="tool dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside"><i class="fa-solid fa-palette"></i><span>색상</span></button>
+                <div class="dropdown-menu color-menu" onmousedown="event.preventDefault()">
+                    <div class="color-grid">
+                        <div class="color-option" style="background:#000000" onclick="setFontColor('#000000')"></div>
+                        <div class="color-option" style="background:#EE2323" onclick="setFontColor('#EE2323')"></div>
+                        <div class="color-option" style="background:#F29B0E" onclick="setFontColor('#F29B0E')"></div>
+                        <div class="color-option" style="background:#209E2F" onclick="setFontColor('#209E2F')"></div>
+                        <div class="color-option" style="background:#217AF4" onclick="setFontColor('#217AF4')"></div>
+                        <div class="color-option" style="background:#A67C52" onclick="setFontColor('#A67C52')"></div>
+                        <div class="color-option" style="background:#FFFFFF; border:1px solid #ddd" onclick="setFontColor('#FFFFFF')"></div>
+                    </div>
+                    <input type="color" id="colorPicker" style="display:none;" onchange="setFontColor(this.value)">
+                    <button type="button" class="custom-color-btn" onclick="document.getElementById('colorPicker').click()"><i class="bi bi-plus-circle"></i> 직접 선택</button>
+                </div>
+            </div>
+            <div class="toolbar-divider"></div>
+            <div class="toolbar-group">
+                <button type="button" class="tool" onclick="execCommand('bold')"><i class="fa-solid fa-bold"></i></button>
+                <button type="button" class="tool" onclick="execCommand('underline')"><i class="fa-solid fa-underline"></i></button>
+            </div>
+            <div class="toolbar-divider"></div>
+            <div class="toolbar-group">
+                <button type="button" class="tool" onclick="alignText('justifyLeft')"><i class="fa-solid fa-align-left"></i></button>
+                <button type="button" class="tool" onclick="alignText('justifyCenter')"><i class="fa-solid fa-align-center"></i></button>
+                <button type="button" class="tool" onclick="alignText('justifyRight')"><i class="fa-solid fa-align-right"></i></button>
+            </div>
+        </div>
+
+        <div class="editor-wrapper">
+            <label class="editor-label"><i class="bi bi-file-text"></i> 내용</label>
+            <div class="editor" contenteditable="true" spellcheck="false" th:utext="${post != null ? post.content : ''}" placeholder="내용을 입력하세요."></div>
+        </div>
+
+        <div class="bottomSavebar">
+            <span class="bottomCancel" onclick="showModal('confirm', '취소 확인', '작성 중인 내용이 사라집니다. 취소하시겠습니까?', () => location.href='/freeboard/list')"><i class="bi bi-x-circle"></i> 취소</span>
+            <span class="bottomSave" onclick="uploadPost()"><i class="bi bi-check-circle-fill"></i> 저장</span>
+        </div>
+    </form>
+
+    <div class="toolbarHeader" onmousedown="if(!event.target.closest('.color-menu') && !event.target.tagName.includes('SELECT')) event.preventDefault()">
+        <div class="toolbar-group">
+            <button type="button" class="tool" onclick="document.getElementById('fileInputHeader').click()"><i class="fa-regular fa-image"></i></button>
+            <input type="file" id="fileInputHeader" class="img-input" style="display:none;" accept="image/*">
+            <button type="button" class="tool" onclick="inputHr()"><i class="fa-solid fa-minus"></i></button>
+        </div>
+        <div class="toolbar-group">
+            <select class="tool" onchange="fontStyle(this.value)">
+                <option value="sans-serif">기본글꼴</option>
+                <option value="Malgun Gothic">맑은고딕</option>
+                <option value="NanumSquare">나눔스퀘어</option>
+            </select>
+            <select class="tool" onchange="setFontSize(this.value)">
+                <option value="3">16px</option>
+                <option value="4" selected>18px</option>
+                <option value="5">24px</option>
+            </select>
+        </div>
+        <div class="toolbar-group dropdown">
+            <button type="button" class="tool dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside"><i class="fa-solid fa-palette"></i></button>
+            <div class="dropdown-menu color-menu" onmousedown="event.preventDefault()">
+                <div class="color-grid">
+                    <div class="color-option" style="background:#000000" onclick="setFontColor('#000000')"></div>
+                    <div class="color-option" style="background:#EE2323" onclick="setFontColor('#EE2323')"></div>
+                    <div class="color-option" style="background:#F29B0E" onclick="setFontColor('#F29B0E')"></div>
+                    <div class="color-option" style="background:#209E2F" onclick="setFontColor('#209E2F')"></div>
+                    <div class="color-option" style="background:#217AF4" onclick="setFontColor('#217AF4')"></div>
+                    <div class="color-option" style="background:#A67C52" onclick="setFontColor('#A67C52')"></div>
+                    <div class="color-option" style="background:#FFFFFF; border:1px solid #ddd" onclick="setFontColor('#FFFFFF')"></div>
+                </div>
+            </div>
+        </div>
+        <div class="toolbar-group">
+            <button type="button" class="tool" onclick="execCommand('bold')"><i class="fa-solid fa-bold"></i></button>
+            <button type="button" class="tool" onclick="execCommand('underline')"><i class="fa-solid fa-underline"></i></button>
+        </div>
+        <div class="toolbar-group">
+            <button type="button" class="tool" onclick="alignText('justifyLeft')"><i class="fa-solid fa-align-left"></i></button>
+            <button type="button" class="tool" onclick="alignText('justifyCenter')"><i class="fa-solid fa-align-center"></i></button>
+            <button type="button" class="tool" onclick="alignText('justifyRight')"><i class="fa-solid fa-align-right"></i></button>
+        </div>
+    </div>
+
+    <div id="customModalOverlay" class="custom-modal-overlay">
+        <div class="custom-modal">
+            <h4 id="modalTitle" class="modal-title">알림</h4>
+            <p id="modalMessage" class="modal-message">메시지 내용</p>
+            <div id="modalButtons" class="modal-buttons"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

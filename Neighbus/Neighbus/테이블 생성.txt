@@ -1,0 +1,553 @@
+-- 데이터베이스 생성
+CREATE DATABASE `neighbus` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE `neighbus`;
+
+-- 유저 등급 테이블 (grades)
+CREATE TABLE `grades`(
+    `id` INT PRIMARY KEY COMMENT '등급 ID (0: 관리자, 1: 비인증, 2: 인증, 3: 신뢰)',
+    `grade` VARCHAR(10) NOT NULL COMMENT '등급명 (예: 관리자, 비인증, 인증, 신뢰)'
+);
+ 
+-- 도, 특별시 테이블 (provinces)
+CREATE TABLE `provinces`(
+    `id` INT PRIMARY KEY COMMENT '시/도 ID',
+    `province` VARCHAR(50) COMMENT '시/도 이름 (예: 서울특별시, 경기도)'
+);
+
+-- 시, 군, 구 테이블 (cities)
+CREATE TABLE `cities`(
+    `id` INT PRIMARY KEY COMMENT '시/군/구 ID',
+    `province` INT NOT NULL COMMENT 'FK: 소속된 provinces.id (시/도 ID)',
+    `city` VARCHAR(50) NOT NULL COMMENT '시/군/구 이름 (예: 강남구, 수원시)'
+);
+
+-- 유저 테이블 (users)
+CREATE TABLE `users`(
+    `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '유저 고유 ID',
+    `name` VARCHAR(20) NOT NULL COMMENT '이름',
+    `username` VARCHAR(500) NOT NULL UNIQUE COMMENT '로그인 아이디',
+    `password` VARCHAR(100) NOT NULL COMMENT '비밀번호',
+    `province` INT NOT NULL COMMENT 'FK: 시/도 테이블 참조 id',
+    `city` INT NOT NULL COMMENT 'FK: 거주 지역 cities.id',
+    `address` VARCHAR(200) NOT NULL COMMENT '상세 주소',
+    `phone` VARCHAR(11) NOT NULL COMMENT '전화번호 (하이픈 제외 11자리)',
+    `email` VARCHAR(50) NOT NULL UNIQUE COMMENT '이메일 주소',
+    `image` VARCHAR(100) DEFAULT 'https://neighbus-s3-bucket.s3.ap-northeast-2.amazonaws.com/default/default-profile.png' COMMENT '프로필 이미지 파일 경로/이름',
+    `grade` INT DEFAULT 1 NOT NULL COMMENT 'FK: 유저 등급 grades.id (기본값 1: 비인증)',
+    `birth` VARCHAR(6) NOT NULL COMMENT '생년월일 (YYMMDD 형식)',
+    `sex` VARCHAR(1) NOT NULL COMMENT '성별 (M: 남자, F: 여자)',
+    `user_uuid` VARCHAR(36) NOT NULL COMMENT '친구 추가를 위한 고유 UUID',
+    `nickname` VARCHAR(20) NULL COMMENT '닉네임',
+    `created_at` DATETIME DEFAULT NOW() COMMENT '가입일시',
+    `provider` VARCHAR(20) NULL ,
+	`provider_id` VARCHAR(100) NULL ,
+	`is_blocked` TINYINT(1) DEFAULT 0 COMMENT '0:정상 1:정지',
+	`blocked_until` DATETIME NULL COMMENT '정지 종료일',
+    FOREIGN KEY (`province`) REFERENCES `provinces`(`id`),
+    FOREIGN KEY (`city`) REFERENCES `cities`(`id`),
+    FOREIGN KEY (`grade`) REFERENCES `grades`(`id`)
+);
+-- 알림 테이블
+CREATE TABLE notification (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    users_id INT NOT NULL,                 
+    notification_type VARCHAR(50) NOT NULL,
+    content VARCHAR(255) NOT NULL,
+    url VARCHAR(255),
+    is_read TINYINT(1) DEFAULT 0,
+    created_at DATETIME DEFAULT NOW(),
+    
+    CONSTRAINT fk_notification_users 
+    FOREIGN KEY (users_id) REFERENCES users(id) ON DELETE CASCADE 
+);
+
+-- 신고 테이블
+CREATE TABLE reports (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '신고 고유 ID',
+    type VARCHAR(20) NOT NULL COMMENT '신고 유형 (예: CLUB, GALLERY, GATHERING, POST, COMMENT)',
+    reporter_id INT NOT NULL COMMENT '신고자 ID',
+    target_id BIGINT NOT NULL COMMENT '신고 대상 ID (게시글ID, 댓글ID 등)',
+    reason VARCHAR(255) NOT NULL COMMENT '신고 사유',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '신고일',
+    status VARCHAR(20) DEFAULT 'PENDING' COMMENT '처리 상태 (PENDING, PROCESSING, COMPLETED)',
+    FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 1. 친구 테이블 (friends) - 수정됨
+-- 유저(users)가 삭제되면, 친구 관계 데이터도 자동으로 삭제되도록 CASCADE 추가
+CREATE TABLE `friends`(
+    `my_id` INT NOT NULL COMMENT 'FK: 내 아이디. 유저ID 참조 (users.id)',
+    `friend_id` INT NOT NULL COMMENT 'FK: 친구 아이디. 유저 ID 참조 (users.id)',
+    FOREIGN KEY (`my_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,       -- ★ 수정됨
+    FOREIGN KEY (`friend_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,   -- ★ 수정됨
+    PRIMARY KEY(`my_id`, `friend_id`)
+);
+
+-- 2. 친구 요청 테이블 (friend_state) - 수정됨
+-- 유저(users)가 삭제되면, 요청 데이터도 자동으로 삭제되도록 CASCADE 유지
+CREATE TABLE `friend_state`(
+    `sender` INT NOT NULL COMMENT 'FK: 친구 요청을 보낸 유저 ID (users.id)',
+    `receiver` INT NOT NULL COMMENT 'FK: 친구 요청을 받은 유저 ID (users.id)',
+    `state` INT DEFAULT 1 COMMENT '친구 상태 (1: 요청 중, 2: 수락됨/친구, 3: 거절)',
+    `created_at` datetime DEFAULT now() COMMENT '요청일',
+    FOREIGN KEY (`sender`) REFERENCES `users`(`id`) ON DELETE CASCADE,      -- ★ 유지/수정
+    FOREIGN KEY (`receiver`) REFERENCES `users`(`id`) ON DELETE CASCADE,    -- ★ 유지/수정
+    PRIMARY KEY(`sender`, `receiver`)
+);
+
+-- 카테고리 테이블 (club_categorys)
+CREATE TABLE `club_categorys`(
+    `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '카테고리 고유 ID',
+    `name` VARCHAR(20) NOT NULL COMMENT '카테고리 종류'
+);
+
+-- 동아리 테이블 (clubs)
+CREATE TABLE `clubs`(
+    `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '동아리 고유 ID',
+    `club_name` VARCHAR(100) NOT NULL UNIQUE COMMENT '동아리 이름',
+    `write_id` int NOT NULL COMMENT '동아리 생성자',
+    `club_info` TEXT NOT NULL COMMENT '동아리 상세정보',
+    `category` INT NOT NULL COMMENT '카테고리',
+    `province_id` INT NOT NULL COMMENT '동아리 지역',
+    `city` INT NOT NULL COMMENT 'FK: 동아리 활동 동네 cities.id',
+    `club_img` VARCHAR(100) NOT NULL COMMENT '동아리 이미지',
+    `created_at` DATETIME DEFAULT NOW() COMMENT '생성일시',
+    FOREIGN KEY (`province_id`) REFERENCES `provinces`(`id`),
+    FOREIGN KEY (`city`) REFERENCES `cities`(`id`),
+    FOREIGN KEY (`write_id`) REFERENCES `users`(`id`),
+    FOREIGN KEY (`category`) REFERENCES `club_categorys`(`id`)
+);
+
+-- 동아리 멤버 테이블 (club_members)
+CREATE TABLE `club_members`(
+    `club_id` INT NOT NULL COMMENT 'FK: 동아리 ID (clubs.id)',
+    `user_id` INT NOT NULL COMMENT 'FK: 멤버 유저 ID (users.id)',
+    `created_at` DATETIME DEFAULT NOW() COMMENT '동아리 가입일시',
+    FOREIGN KEY (`club_id`) REFERENCES `clubs`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    PRIMARY KEY(`club_id`, `user_id`)
+);
+
+
+-- 자유게시판 테이블 (freeboards)
+CREATE TABLE `freeboards`(
+    `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '게시글 고유 ID',
+    `title` VARCHAR(100) NOT NULL COMMENT '게시글 제목',
+    `content` LONGTEXT NOT NULL COMMENT '게시글 내용',
+    `writer` INT NOT NULL COMMENT 'FK: 작성자 유저 ID (users.id)',
+    `club_id` INT NOT NULL COMMENT 'FK: 동아리 고유 ID',
+    `view_count` INT DEFAULT 0 COMMENT '조회수',
+    `created_at` DATETIME DEFAULT NOW() COMMENT '작성일시',
+    FOREIGN KEY (`writer`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`club_id`) REFERENCES `clubs`(`id`) ON DELETE CASCADE
+);
+
+-- 자유게시판 이미지 테이블 (freeboard_images)
+CREATE TABLE `freeboard_images`(
+    `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '이미지 고유 ID',
+    `freeboard` INT NOT NULL COMMENT 'FK: 소속된 freeboards.id',
+    `img` VARCHAR(50) NOT NULL COMMENT '이미지 파일 이름 (UUID.확장자)',
+    FOREIGN KEY (`freeboard`) REFERENCES `freeboards`(`id`) ON DELETE CASCADE
+);
+
+-- 자유게시판 댓글 테이블 (freeboard_comments)
+CREATE TABLE `freeboard_comments`(
+    `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '댓글 고유 ID',
+    `freeboard` INT NOT NULL COMMENT 'FK: 소속된 freeboards.id',
+    `parent` INT DEFAULT 0 NOT NULL COMMENT 'FK: 부모 댓글 ID (대댓글 시 참조)',
+    `writer` INT NOT NULL COMMENT 'FK: 작성자 유저 ID (users.id)',
+    `content` TEXT NOT NULL COMMENT '댓글 내용',
+    `created_at` DATETIME DEFAULT NOW() COMMENT '작성일시',
+    FOREIGN KEY (`freeboard`) REFERENCES `freeboards`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`writer`) REFERENCES `users`(`id`) ON DELETE CASCADE
+);
+
+-- 자유게시판 좋아요/싫어요 테이블 (freeboard_reactions)
+CREATE TABLE `freeboard_reactions` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '반응 고유 ID',
+    `freeboard_id` INT NOT NULL COMMENT 'FK: 게시글 ID (freeboards.id)',
+    `user_id` INT NOT NULL COMMENT 'FK: 유저 ID (users.id)',
+    `reaction_type` int NOT NULL COMMENT '1:좋아요  2:싫어요',
+    `created_at` DATETIME DEFAULT NOW() COMMENT '반응 등록일시',
+    FOREIGN KEY (`freeboard_id`) REFERENCES `freeboards`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    UNIQUE KEY `unique_user_reaction` (`freeboard_id`, `user_id`) COMMENT '한 유저는 게시글당 하나의 반응만 가능'
+) COMMENT='자유게시판 좋아요/싫어요 반응 테이블';
+
+-- 모집 테이블 (recruitments)
+CREATE TABLE `recruitments` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '모집 공고 고유 번호',  
+    `club_id` INT NOT NULL COMMENT '소속 동아리 ID',     
+    `title` VARCHAR(100) NOT NULL COMMENT '모집 제목',
+    `content` TEXT NOT NULL COMMENT '모집 상세 내용',
+    `writer` INT NOT NULL COMMENT '작성자 유저 ID',
+    `address` VARCHAR(200) NOT NULL COMMENT '모임 장소 주소',
+    `max_user` INT NOT NULL COMMENT '최대 모집 인원',
+    `meeting_date` DATETIME NOT NULL COMMENT '모임 일시',     
+    `status` VARCHAR(20) DEFAULT 'OPEN' NOT NULL COMMENT '모집 상태 (OPEN: 모집중, CLOSED: 마감)',
+    `latitude` DECIMAL(10, 7) NULL COMMENT '카카오맵 위치 (위도)',
+    `longitude` DECIMAL(10, 7) NULL COMMENT '카카오맵 위치 (경도)',    
+    `created_at` DATETIME DEFAULT NOW() COMMENT '작성일시',
+    FOREIGN KEY (`club_id`) REFERENCES `clubs`(`id`) ON DELETE CASCADE,     
+    FOREIGN KEY (`writer`) REFERENCES `users`(`id`) ON DELETE CASCADE
+);
+
+
+-- 모집 멤버
+CREATE TABLE recruitment_member (
+    recruitment_id INT NOT NULL,
+    user_id INT NOT NULL,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (recruitment_id, user_id),    
+    FOREIGN KEY (recruitment_id) REFERENCES recruitments(id) ON DELETE CASCADE,   
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE 
+);
+
+-- 갤러리 테이블 (galleries)
+CREATE TABLE `galleries`(
+    `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '갤러리 게시글 고유 ID',
+    `title` VARCHAR(100) NOT NULL COMMENT '게시글 제목',
+    `content` TEXT NOT NULL COMMENT '게시글 내용',
+    `writer` INT NOT NULL COMMENT 'FK: 작성자 유저 ID (users.id)',
+    `club_id` INT NOT NULL COMMENT 'FK: 동아리 고유 ID',
+    `view_count` INT DEFAULT 0 COMMENT '조회수',
+    `created_at` DATETIME DEFAULT NOW() COMMENT '작성일시',
+    FOREIGN KEY (`writer`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`club_id`) REFERENCES `clubs`(`id`) ON DELETE CASCADE
+);
+
+-- 갤러리 이미지 테이블 (gallery_images)
+CREATE TABLE `gallery_images`(
+    `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '이미지 고유 ID',
+    `gallery` INT NOT NULL COMMENT 'FK: 소속된 galleries.id',
+    `img` VARCHAR(100) NOT NULL COMMENT '이미지 파일 이름 (UUID.확장자)',
+    FOREIGN KEY (`gallery`) REFERENCES `galleries`(`id`) ON DELETE CASCADE
+);
+
+-- 갤러리 댓글 테이블 (gallery_comments)
+CREATE TABLE `gallery_comments`(
+    `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '댓글 고유 ID',
+    `gallery` INT NOT NULL COMMENT 'FK: 소속된 galleries.id',
+    `parent` INT DEFAULT 0 NOT NULL COMMENT 'FK: 부모 댓글 ID (대댓글 시 참조)',
+    `writer` INT NOT NULL COMMENT 'FK: 작성자 유저 ID (users.id)',
+    `content` TEXT NOT NULL COMMENT '댓글 내용',
+    `created_at` DATETIME DEFAULT NOW() COMMENT '작성일시',
+    FOREIGN KEY (`gallery`) REFERENCES `galleries`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`writer`) REFERENCES `users`(`id`) ON DELETE CASCADE
+);
+
+-- 갤러리 좋아요/싫어요 테이블 (gallery_reactions)
+CREATE TABLE `gallery_reactions` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '반응 고유 ID',
+    `gallery_id` INT NOT NULL COMMENT 'FK: 갤러리 게시글 ID (galleries.id)',
+    `user_id` INT NOT NULL COMMENT 'FK: 유저 ID (users.id)',
+    `reaction_type` int NOT NULL COMMENT '1:좋아요  2:싫어요',
+    `created_at` DATETIME DEFAULT NOW() COMMENT '반응 등록일시',
+    FOREIGN KEY (`gallery_id`) REFERENCES `galleries`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    UNIQUE KEY `unique_user_reaction` (`gallery_id`, `user_id`) COMMENT '한 유저는 게시글당 하나의 반응만 가능'
+) COMMENT='갤러리 좋아요/싫어요 반응 테이블';
+
+-- 문의 카테고리 테이블
+CREATE TABLE inquiry_category(
+	`id` int primary key COMMENT '고유 ID',
+    `name` varchar(20) not null unique COMMENT '카테고리'
+);
+
+-- 문의 테이블 (inquiries)
+CREATE TABLE `inquiries`(
+    `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '문의 고유 ID',
+    `title` VARCHAR(100) NOT NULL COMMENT '문의 제목',
+    `content` TEXT NOT NULL COMMENT '문의 내용',
+    `writer` INT NOT NULL COMMENT 'FK: 작성자 유저 ID (users.id)',
+    `state` INT DEFAULT 1 COMMENT '처리 상태 (1: 대기, 2: 처리 중, 3: 완료)',
+    `category` INT NOT NULL COMMENT '카테고리 (1: 서비스 이용, 2: 계정/회원, 3: 결제/환불, 4: 기술 문제, 5: 제안/건의, 6: 제휴 7: 기타)',
+    `created_at` DATETIME DEFAULT NOW() COMMENT '작성일시',
+    FOREIGN KEY (`writer`) REFERENCES `users`(`id`),
+    FOREIGN KEY (`category`) REFERENCES `inquiry_category`(`id`)
+);
+
+-- 문의 댓글 테이블 (inquiry_comments)
+CREATE TABLE `inquiry_comments`(
+    `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '답변 댓글 고유 ID',
+    `inquiry` INT NOT NULL COMMENT 'FK: 소속된 inquiries.id',
+    `content` TEXT NOT NULL COMMENT '답변 내용',
+    `writer` INT NOT NULL COMMENT 'FK: 작성자 유저 ID (users.id)',
+    `created_at` DATETIME DEFAULT NOW() COMMENT '작성일시',
+    FOREIGN KEY (`inquiry`) REFERENCES `inquiries`(`id`),
+    FOREIGN KEY (`writer`) REFERENCES `users`(`id`)
+);
+
+-- 공지사항 테이블 (notices)
+CREATE TABLE `notices`(
+    `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '공지사항 고유 ID',
+    `title` VARCHAR(100) NOT NULL COMMENT '공지 제목',
+    `content` TEXT NOT NULL COMMENT '공지 내용',
+    `writer` INT NOT NULL COMMENT 'FK: 작성자 (관리자) 유저 ID (users.id)',
+    `created_at` DATETIME DEFAULT NOW() COMMENT '작성일시',
+    FOREIGN KEY (`writer`) REFERENCES `users`(`id`)
+);
+-- ==========================================
+-- 1. 채팅방 테이블 (수정됨)
+-- ==========================================
+CREATE TABLE chat_room (
+    room_id VARCHAR(50) NOT NULL COMMENT '채팅방 식별자 (모집: "15", 친구: "3_5")',
+    room_name VARCHAR(100) NOT NULL COMMENT '채팅방 이름',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시간',
+    
+    -- [추가] 자동 삭제를 위한 연결 고리들 (NULL 허용)
+    linked_recruitment_id INT NULL COMMENT '연결된 모집글 ID (모집글 삭제 시 방 삭제용)',
+    user1_id INT NULL COMMENT '친구1 ID (친구 탈퇴 시 방 삭제용)',
+    user2_id INT NULL COMMENT '친구2 ID (친구 탈퇴 시 방 삭제용)',
+
+    PRIMARY KEY (room_id),
+
+    -- [제약조건] 각 테이블과 연결 (CASCADE 설정)
+    CONSTRAINT fk_chat_recruit FOREIGN KEY (linked_recruitment_id) REFERENCES recruitments(id) ON DELETE CASCADE,
+    CONSTRAINT fk_chat_user1 FOREIGN KEY (user1_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_chat_user2 FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- ==========================================
+-- 2. 채팅 메시지 테이블 (수정됨)
+-- ==========================================
+CREATE TABLE chat_message (
+    message_id BIGINT AUTO_INCREMENT NOT NULL COMMENT '메시지 고유 ID', 
+    room_id VARCHAR(50) NOT NULL COMMENT '채팅방 ID (FK: chat_room.room_id)', -- INT에서 VARCHAR로 변경됨
+    sender VARCHAR(50) NOT NULL COMMENT '보낸 사람',
+    message TEXT COMMENT '메시지 내용',
+    message_type VARCHAR(20) NOT NULL COMMENT '메시지 타입 (ENTER, TALK)',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '전송 시간',
+    
+    PRIMARY KEY (message_id),
+    
+    -- chat_room의 room_id가 VARCHAR로 바뀌었으므로 여기도 타입이 맞아야 함
+    FOREIGN KEY (room_id) REFERENCES chat_room (room_id) ON DELETE CASCADE
+);
+
+-- 방문 히스토리 테이블
+create table visit_history(
+	freeboards int default 0,
+    galleries int default 0,
+    created_at datetime default now()
+);
+
+-- 방문 히스토리 테이블에 트리거 적용 freeboards
+DELIMITER $$
+CREATE TRIGGER trigger_visit_history_freeboards
+AFTER UPDATE ON freeboards
+FOR EACH ROW
+BEGIN
+    IF NEW.view_count > OLD.view_count THEN
+        INSERT INTO visit_history (freeboards, galleries, created_at)
+        VALUES (1, 0, NOW());
+    END IF;
+END$$
+DELIMITER ;
+
+-- 방문 히스토리 테이블에 트리거 적용 galleries
+DELIMITER $$
+CREATE TRIGGER trigger_visit_history_galleries
+AFTER UPDATE ON galleries
+FOR EACH ROW
+BEGIN
+    IF NEW.view_count > OLD.view_count THEN
+        INSERT INTO visit_history (freeboards, galleries, created_at)
+        VALUES (0, 1, NOW());
+    END IF;
+END$$
+DELIMITER ;
+
+-- ==============================
+-- 유저 등급 테이블 (grades 테이블)
+-- ==============================
+INSERT INTO grades (id, grade) VALUES
+(0, '관리자'),
+(1, '비인증'),
+(2, '인증'),
+(3, '신뢰');
+
+-- ==============================
+-- 지역 INSERT SQL
+-- ==============================
+
+-- ==============================
+-- 1. 광역자치단체 (provinces 테이블)
+-- ==============================
+INSERT INTO provinces (id, province) VALUES
+(1, '서울특별시'),
+(2, '부산광역시'),
+(3, '대구광역시'),
+(4, '인천광역시'),
+(5, '광주광역시'),
+(6, '대전광역시'),
+(7, '울산광역시'),
+(8, '세종특별자치시'),
+(9, '경기도'),
+(10, '강원특별자치도'),
+(11, '충청북도'),
+(12, '충청남도'),
+(13, '전북특별자치도'),
+(14, '전라남도'),
+(15, '경상북도'),
+(16, '경상남도'),
+(17, '제주특별자치도');
+
+
+-- ==============================
+-- 2. 시, 군, 구 (cities 테이블)
+-- id 컬럼 추가 및 순차적 값 부여
+-- ==============================
+
+-- 서울특별시 (province_id = 1, id: 1~25)
+INSERT INTO cities (id, province, city) VALUES
+(1, 1, '강남구'), (2, 1, '강동구'), (3, 1, '강북구'), (4, 1, '강서구'),
+(5, 1, '관악구'), (6, 1, '광진구'), (7, 1, '구로구'), (8, 1, '금천구'),
+(9, 1, '노원구'), (10, 1, '도봉구'), (11, 1, '동대문구'), (12, 1, '동작구'),
+(13, 1, '마포구'), (14, 1, '서대문구'), (15, 1, '서초구'), (16, 1, '성동구'),
+(17, 1, '성북구'), (18, 1, '송파구'), (19, 1, '양천구'), (20, 1, '영등포구'),
+(21, 1, '용산구'), (22, 1, '은평구'), (23, 1, '종로구'), (24, 1, '중구'), (25, 1, '중랑구');
+
+-- 부산광역시 (province_id = 2, id: 26~41)
+INSERT INTO cities (id, province, city) VALUES
+(26, 2, '중구'), (27, 2, '서구'), (28, 2, '동구'), (29, 2, '영도구'), (30, 2, '부산진구'),
+(31, 2, '동래구'), (32, 2, '남구'), (33, 2, '북구'), (34, 2, '해운대구'), (35, 2, '사하구'),
+(36, 2, '금정구'), (37, 2, '강서구'), (38, 2, '연제구'), (39, 2, '수영구'),
+(40, 2, '사상구'), (41, 2, '기장군');
+
+-- 대구광역시 (province_id = 3, id: 42~49)
+INSERT INTO cities (id, province, city) VALUES
+(42, 3, '중구'), (43, 3, '동구'), (44, 3, '서구'), (45, 3, '남구'),
+(46, 3, '북구'), (47, 3, '수성구'), (48, 3, '달서구'), (49, 3, '달성군');
+
+-- 인천광역시 (province_id = 4, id: 50~59)
+INSERT INTO cities (id, province, city) VALUES
+(50, 4, '중구'), (51, 4, '동구'), (52, 4, '미추홀구'), (53, 4, '연수구'),
+(54, 4, '남동구'), (55, 4, '부평구'), (56, 4, '계양구'), (57, 4, '서구'),
+(58, 4, '강화군'), (59, 4, '옹진군');
+
+-- 광주광역시 (province_id = 5, id: 60~64)
+INSERT INTO cities (id, province, city) VALUES
+(60, 5, '동구'), (61, 5, '서구'), (62, 5, '남구'), (63, 5, '북구'), (64, 5, '광산구');
+
+-- 대전광역시 (province_id = 6, id: 65~69)
+INSERT INTO cities (id, province, city) VALUES
+(65, 6, '동구'), (66, 6, '중구'), (67, 6, '서구'), (68, 6, '유성구'), (69, 6, '대덕구');
+
+-- 울산광역시 (province_id = 7, id: 70~74)
+INSERT INTO cities (id, province, city) VALUES
+(70, 7, '중구'), (71, 7, '남구'), (72, 7, '동구'), (73, 7, '북구'), (74, 7, '울주군');
+
+-- 세종특별자치시 (province_id = 8, id: 75)
+INSERT INTO cities (id, province, city) VALUES
+(75, 8, '세종시');
+
+-- 경기도 (province_id = 9, id: 76~103)
+INSERT INTO cities (id, province, city) VALUES
+(76, 9, '수원시'), (77, 9, '성남시'), (78, 9, '의정부시'), (79, 9, '안양시'),
+(80, 9, '부천시'), (81, 9, '광명시'), (82, 9, '평택시'), (83, 9, '동두천시'),
+(84, 9, '안산시'), (85, 9, '고양시'), (86, 9, '과천시'), (87, 9, '구리시'),
+(88, 9, '남양주시'), (89, 9, '오산시'), (90, 9, '시흥시'), (91, 9, '군포시'),
+(92, 9, '의왕시'), (93, 9, '하남시'), (94, 9, '용인시'), (95, 9, '파주시'),
+(96, 9, '이천시'), (97, 9, '안성시'), (98, 9, '김포시'), (99, 9, '화성시'),
+(100, 9, '광주시'), (101, 9, '양주시'), (102, 9, '포천시'), (103, 9, '여주시');
+
+-- 강원특별자치도 (province_id = 10, id: 104~121)
+INSERT INTO cities (id, province, city) VALUES
+(104, 10, '춘천시'), (105, 10, '원주시'), (106, 10, '강릉시'), (107, 10, '동해시'),
+(108, 10, '태백시'), (109, 10, '속초시'), (110, 10, '삼척시'),
+(111, 10, '홍천군'), (112, 10, '횡성군'), (113, 10, '영월군'),
+(114, 10, '평창군'), (115, 10, '정선군'), (116, 10, '철원군'),
+(117, 10, '화천군'), (118, 10, '양구군'), (119, 10, '인제군'),
+(120, 10, '고성군'), (121, 10, '양양군');
+
+-- 충청북도 (province_id = 11, id: 122~131)
+INSERT INTO cities (id, province, city) VALUES
+(122, 11, '청주시'), (123, 11, '충주시'), (124, 11, '제천시'),
+(125, 11, '보은군'), (126, 11, '옥천군'), (127, 11, '영동군'),
+(128, 11, '진천군'), (129, 11, '괴산군'), (130, 11, '음성군'),
+(131, 11, '단양군');
+
+-- 충청남도 (province_id = 12, id: 132~146)
+INSERT INTO cities (id, province, city) VALUES
+(132, 12, '천안시'), (133, 12, '공주시'), (134, 12, '보령시'),
+(135, 12, '아산시'), (136, 12, '서산시'), (137, 12, '논산시'),
+(138, 12, '계룡시'), (139, 12, '당진시'),
+(140, 12, '금산군'), (141, 12, '부여군'), (142, 12, '서천군'),
+(143, 12, '청양군'), (144, 12, '홍성군'), (145, 12, '예산군'),
+(146, 12, '태안군');
+
+-- 전북특별자치도 (province_id = 13, id: 147~160)
+INSERT INTO cities (id, province, city) VALUES
+(147, 13, '전주시'), (148, 13, '군산시'), (149, 13, '익산시'),
+(150, 13, '정읍시'), (151, 13, '남원시'), (152, 13, '김제시'),
+(153, 13, '완주군'), (154, 13, '진안군'), (155, 13, '무주군'),
+(156, 13, '장수군'), (157, 13, '임실군'), (158, 13, '순창군'),
+(159, 13, '고창군'), (160, 13, '부안군');
+
+-- 전라남도 (province_id = 14, id: 161~182)
+INSERT INTO cities (id, province, city) VALUES
+(161, 14, '목포시'), (162, 14, '여수시'), (163, 14, '순천시'),
+(164, 14, '나주시'), (165, 14, '광양시'),
+(166, 14, '담양군'), (167, 14, '곡성군'), (168, 14, '구례군'),
+(169, 14, '고흥군'), (170, 14, '보성군'), (171, 14, '화순군'),
+(172, 14, '장흥군'), (173, 14, '강진군'), (174, 14, '해남군'),
+(175, 14, '영암군'), (176, 14, '무안군'), (177, 14, '함평군'),
+(178, 14, '영광군'), (179, 14, '장성군'), (180, 14, '완도군'),
+(181, 14, '진도군'), (182, 14, '신안군');
+
+-- 경상북도 (province_id = 15, id: 183~205)
+INSERT INTO cities (id, province, city) VALUES
+(183, 15, '포항시'), (184, 15, '경주시'), (185, 15, '김천시'),
+(186, 15, '안동시'), (187, 15, '구미시'), (188, 15, '영주시'),
+(189, 15, '영천시'), (190, 15, '상주시'), (191, 15, '문경시'),
+(192, 15, '경산시'), (193, 15, '군위군'), (194, 15, '의성군'),
+(195, 15, '청송군'), (196, 15, '영양군'), (197, 15, '영덕군'),
+(198, 15, '청도군'), (199, 15, '고령군'), (200, 15, '성주군'),
+(201, 15, '칠곡군'), (202, 15, '예천군'), (203, 15, '봉화군'),
+(204, 15, '울진군'), (205, 15, '울릉군');
+
+-- 경상남도 (province_id = 16, id: 206~223)
+INSERT INTO cities (id, province, city) VALUES
+(206, 16, '창원시'), (207, 16, '진주시'), (208, 16, '통영시'),
+(209, 16, '사천시'), (210, 16, '김해시'), (211, 16, '밀양시'),
+(212, 16, '거제시'), (213, 16, '양산시'), (214, 16, '의령군'),
+(215, 16, '함안군'), (216, 16, '창녕군'), (217, 16, '고성군'),
+(218, 16, '남해군'), (219, 16, '하동군'), (220, 16, '산청군'),
+(221, 16, '함양군'), (222, 16, '거창군'), (223, 16, '합천군');
+
+-- 제주특별자치도 (province_id = 17, id: 224~225)
+INSERT INTO cities (id, province, city) VALUES
+(224, 17, '제주시'), (225, 17, '서귀포시');
+
+-- 관리자 계정
+insert into users(id, name,	username, password,	province, city, address, phone, email, grade, birth, sex, user_uuid, nickname)
+values(0, '관리자',	'admin', '{bcrypt}$2a$10$cssx9PjNvJvfS5D/xv1ZAeB4Tx3tVgEdKjr38K6.pBS5wGbx0EtSa', 1, 1, '서울 특별시 강남구', '01012345678',	'admin@naver.com', 
+0, DATE_FORMAT('19970706', '%y%m%d'), 'M', '35bc20fb-682a-4cb3-84bc-a94a5b83921a', 'admin');
+
+-- 문의 카테고리
+INSERT INTO inquiry_category (`id`, `name`) VALUES
+(1, '서비스 이용'),
+(2, '계정/회원'),
+(3, '결제/환불'),
+(4, '기술 문제'),
+(5, '제안/건의'),
+(6, '제휴'),
+(7, '기타');
+
+-- 클럽 카테고리
+INSERT INTO club_categorys(`id`, `name`) values
+(1, '운동'),
+(2, '게임'),
+(3, '영화'),
+(4, '공부'),
+(5, '개발'),
+(6, '봉사'),
+(7, '여행'),
+(8, '맛집'),
+(9, '동물'),
+(10, '패션'),
+(11, '쇼핑'),
+(12, '음주'),
+(13, '드라이브');

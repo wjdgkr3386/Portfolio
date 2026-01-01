@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+
+<div th:fragment="reportModal" class="modal fade report-modal" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reportModalLabel">
+                    <i class="bi bi-shield-exclamation"></i>
+                    신고하기
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form id="reportForm">
+                <div class="modal-body">
+                    <input type="hidden" id="report-type" name="type">
+                    <input type="hidden" id="report-target-id" name="targetId">
+                    <input type="hidden" id="report-reporter-id" name="reporterId" th:value="${#authentication.principal.id}" sec:authorize="isAuthenticated()">
+                    <input type="hidden" id="report-reporter-id-guest" name="reporterId" value="0" sec:authorize="!isAuthenticated()">
+
+                    <div class="mb-4">
+                        <label for="report-category" class="form-label">신고 종류</label>
+                        <select class="form-select" id="report-category" name="category" required>
+                            <option value="" selected disabled>선택하세요</option>
+                            <option value="폭력">폭력</option>
+                            <option value="도박">도박</option>
+                            <option value="음란">음란</option>
+                            <option value="사기">사기</option>
+                            <option value="범죄">범죄</option>
+                            <option value="사이비">사이비</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="report-reason" class="form-label">신고 사유</label>
+                        <textarea class="form-control" id="report-reason" name="reason" rows="4" placeholder="신고 사유를 상세히 작성해주세요.&#10;&#10;예시:&#10;- 어떤 내용이 문제인지&#10;- 언제 발견했는지&#10;- 어떤 규칙을 위반했는지" required></textarea>
+                    </div>
+
+                    <div sec:authorize="!isAuthenticated()" class="alert" role="alert">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>로그인하지 않은 경우, 신고 처리 과정에서 불이익을 받을 수 있습니다.</span>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-primary">신고하기</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

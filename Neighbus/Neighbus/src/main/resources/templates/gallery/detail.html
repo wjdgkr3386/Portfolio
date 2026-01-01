@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    
+    <title th:text="|${galleryMap.TITLE} - 갤러리 - NEIGHBUS|">갤러리 상세 - NEIGHBUS</title>
+    
+    <link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/css/navibar.css">
+    <link rel="stylesheet" href="/css/bottom-navbar.css">
+    <link rel="stylesheet" href="/css/custom-modal.css">
+    <script src="/js/custom-modal.js"></script>
+
+    <style>
+        :root {
+            --primary: #A67C52; --primary-dark: #8D6E63; --primary-light: #C9A88A;
+            --accent-gold: #D4AF87; --accent-red: #C87E7E; --accent-red-dark: #B36A6A;
+            --bg-ivory: #FFF8F0; --bg-warm: #FFF5EB; --bg-cream: #FAF0E6;
+            --card-bg: #FFFBF7; --text-primary: #5D4037; --text-secondary: #8D6E63;
+            --text-light: #A1887F; --border-color: #E8D7C3; --shadow-color: rgba(166, 124, 82, 0.1);
+            --white: #FFFFFF;
+        }
+        
+        body { font-family: 'SUIT', sans-serif; background: var(--bg-ivory); color: var(--text-primary); margin: 0; padding-bottom: 80px; }
+        .custom-container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+        .post-container { background: var(--card-bg); border-radius: 24px; padding: 40px; box-shadow: 0 10px 30px var(--shadow-color); border: 1px solid var(--border-color); position: relative; }
+
+        /* 게시글 헤더 */
+        .post-header .post-title { font-size: 28px; font-weight: 800; margin-bottom: 20px; line-height: 1.4; color: var(--text-primary); }
+        .post-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 15px; color: var(--text-secondary); font-size: 14px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); }
+        .post-meta span { display: flex; align-items: center; gap: 6px; }
+
+        /* 이미지 및 내용 */
+        .post-content { font-size: 16px; line-height: 1.8; margin-bottom: 40px; white-space: pre-wrap; color: var(--text-primary); }
+        .gallery-images img { max-width: 100%; border-radius: 16px; margin-bottom: 15px; box-shadow: 0 4px 12px var(--shadow-color); height: auto; }
+
+        /* 신고 버튼 */
+        .btn-report { position: absolute; top: 40px; right: 40px; padding: 8px 16px; background: var(--bg-cream); color: var(--accent-red); border: 1px solid var(--border-color); border-radius: 50px; font-weight: 700; font-size: 13px; text-decoration: none; transition: all 0.3s; z-index: 10; }
+        .btn-report:hover { background: var(--accent-red); color: white; }
+
+        /* 반응 버튼 */
+        .reaction-buttons-group { display: flex; gap: 12px; justify-content: center; margin: 30px 0; }
+        .reaction-btn { display: flex; align-items: center; gap: 8px; padding: 10px 24px; border: 2px solid var(--border-color); background: var(--white); color: var(--text-secondary); border-radius: 50px; font-weight: 700; cursor: pointer; transition: all 0.3s; }
+        .reaction-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .reaction-btn.dislike-btn.active { background: var(--accent-red); border-color: var(--accent-red); }
+
+        /* 댓글 섹션 */
+        .comment-section { margin-top: 50px; border-top: 2px solid var(--bg-cream); padding-top: 30px; }
+        .comment-header { font-size: 20px; font-weight: 800; margin-bottom: 25px; }
+        
+        /* 댓글 입력창 */
+        #comment-form, .hiddenform { background: var(--white); border: 1px solid var(--border-color); border-radius: 18px; padding: 15px; margin-bottom: 25px; box-shadow: 0 4px 10px var(--shadow-color); }
+        #comment-form textarea, .hiddenform textarea { width: 100%; border: none; outline: none; resize: none; min-height: 60px; font-size: 15px; background: transparent; }
+        .form-actions { display: flex; justify-content: flex-end; margin-top: 10px; border-top: 1px solid var(--bg-warm); padding-top: 10px; }
+        .form-actions button { background: var(--primary); color: white; border: none; padding: 8px 24px; border-radius: 50px; font-weight: 700; font-size: 14px; }
+
+        /* 댓글 리스트 */
+        #comment-list { list-style: none; padding: 0; }
+        .comment-list-li { margin-bottom: 20px; }
+        .comment-card { background: var(--white); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; transition: 0.3s; }
+        
+        /* 작성자 정보 헤더 영역 */
+        .comment-author-info { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; position: relative; }
+        .avatar-circle { width: 34px; height: 34px; background: var(--bg-cream); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .writer-name-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .writer-name { font-weight: 800; font-size: 15px; color: var(--text-primary); }
+        .comment-date { font-size: 11px; color: var(--text-light); }
+        
+        /* 답글 달기 버튼 (닉네임 옆) */
+        .dadat { font-size: 12px; font-weight: 800; color: var(--primary); cursor: pointer; padding: 2px 8px; background: var(--bg-warm); border-radius: 4px; transition: 0.2s; }
+        .dadat:hover { background: var(--primary-light); color: white; }
+
+        /* 신고 버튼 (우측 상단 고정) */
+        .btn-report-small { margin-left: auto; font-size: 13px; color: var(--text-light); text-decoration: none; padding: 4px; transition: 0.2s; }
+        .btn-report-small:hover { color: var(--accent-red); }
+
+        .comment-content-text { font-size: 15px; line-height: 1.6; color: var(--text-primary); padding-left: 44px; margin-bottom: 5px; }
+        
+        /* 대댓글(답글) */
+        .reply-container { margin-left: 45px; margin-top: 10px; position: relative; }
+        .reply-container::before { content: '↳'; position: absolute; left: -22px; top: 10px; color: var(--primary-light); font-weight: bold; font-size: 18px; }
+        .reply-card { background: var(--bg-warm); border: 1px solid var(--border-color); border-radius: 14px; padding: 15px; }
+        .reply-card .comment-content-text { padding-left: 38px; }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .custom-container { padding: 0 12px; margin: 20px auto; }
+            .post-container { padding: 25px 15px; border-radius: 16px; }
+            .post-header .post-title { font-size: 22px; }
+            .reply-container { margin-left: 20px; }
+            .comment-content-text, .reply-card .comment-content-text { padding-left: 0; }
+        }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div th:replace="~{include/navibar :: header-nav}"></div>
+
+    <div class="custom-container">
+        <div class="post-container">
+            <a href="#" class="btn-report" data-bs-toggle="modal" data-bs-target="#reportModal"
+               th:attr="data-report-type='GALLERY', data-report-target-id=${galleryMap.ID}">
+				<i class="fa-solid fa-flag"></i> <span>신고</span>
+			</a>
+
+            <div class="post-header">
+                <h1 class="post-title" th:utext="${galleryMap.TITLE}">제목</h1>
+                <div class="post-meta">
+                    <span><i class="fa-regular fa-user"></i> <span th:utext="${galleryMap.WRITER}">작성자</span></span>
+                    <span><i class="fa-regular fa-clock"></i> <span th:text="${galleryMap.CREATED_AT}">날짜</span></span>
+                    <span><i class="fa-regular fa-eye"></i> <span th:text="${galleryMap.VIEW_COUNT}">0</span></span>
+                </div>
+            </div>
+            
+            <div class="gallery-images" th:if="${galleryMap.IMAGES != null}">
+			    <div th:each="img : ${galleryMap.IMAGES}">
+			        <img th:src="${img.IMG}" alt="갤러리 이미지">
+			    </div>
+			</div>
+			
+            <div class="post-content" th:utext="${galleryMap.CONTENT}">내용</div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+                <a th:if="${galleryMap['PREV'] != null}" th:href="@{|/gallery/detail/${galleryMap['PREV']}|}" class="btn btn-outline-secondary rounded-circle" style="width:40px; height:40px; display:flex; align-items:center; justify-content:center;"><i class="bi bi-chevron-left"></i></a>
+                <div th:unless="${galleryMap['PREV'] != null}" style="width:40px;"></div>
+
+                <div class="reaction-buttons-group my-0">
+                    <button class="reaction-btn like-btn" id="likeBtn" th:classappend="${reaction['userReaction'] == 1} ? 'active' : ''" onclick="toggleReaction(1)">
+                        <i th:class="${reaction['userReaction'] == 1} ? 'fa-solid fa-thumbs-up' : 'fa-regular fa-thumbs-up'"></i>
+                        <span id="like-count" th:text="${reaction.likeCount} ?: 0">0</span>
+                    </button>
+                    <button class="reaction-btn dislike-btn" id="dislikeBtn" th:classappend="${reaction['userReaction'] == 2} ? 'active' : ''" onclick="toggleReaction(2)">
+                        <i th:class="${reaction['userReaction'] == 2} ? 'fa-solid fa-thumbs-down' : 'fa-regular fa-thumbs-down'"></i>
+                        <span id="dislike-count" th:text="${reaction.dislikeCount} ?: 0">0</span>
+                    </button>
+                </div>
+
+                <a th:if="${galleryMap['NEXT'] != null}" th:href="@{|/gallery/detail/${galleryMap['NEXT']}|}" class="btn btn-outline-secondary rounded-circle" style="width:40px; height:40px; display:flex; align-items:center; justify-content:center;"><i class="bi bi-chevron-right"></i></a>
+                <div th:unless="${galleryMap['NEXT'] != null}" style="width:40px;"></div>
+            </div>
+
+            <div class="d-flex justify-content-between pt-3 border-top">
+                <a th:href="@{/gallery}" class="btn btn-outline-secondary rounded-pill px-4">목록</a>
+                <div class="d-flex gap-2" th:if="${userId != 0 and userId == galleryMap['WRITER_ID']}">
+					<a th:href="@{|/gallery/edit/${galleryMap['ID']}|}" class="btn btn-sm btn-outline-warning rounded-pill px-3">수정</a>
+					<a th:href="@{|/gallery/delete/${galleryMap['ID']}|}" class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="event.preventDefault(); showModal('confirm', '게시글 삭제', '정말로 삭제하시겠습니까?', () => { location.href = this.href; });">삭제</a>
+				</div>
+            </div>
+			
+            <div class="comment-section">
+                <h2 class="comment-header">댓글 <span id="comment-count" style="color:var(--primary);" th:text="${galleryMap.COMMENTS.size()}">0</span></h2>
+                
+                <form id="comment-form" th:action="@{/gallery/insertComment/{id}(id=${galleryMap.ID})}" method="POST">
+                	<input type="hidden" name="parent" value="0">
+                    <textarea name="comment" placeholder="따뜻한 댓글을 남겨주세요." required></textarea>
+                    <div class="form-actions"><button type="submit">등록</button></div>
+                </form>
+
+                <ul id="comment-list">
+                	<li class="comment-list-li" th:each="comment : ${galleryMap.COMMENTS}">
+                        <div class="comment-card" th:if="${comment.PARENT == 0}">
+                            <div class="comment-author-info">
+                                <div class="avatar-circle"><i class="fa-solid fa-user"></i></div>
+                                <div>
+                                    <div class="writer-name-group">
+                                        <span class="writer-name" th:text="${comment.WRITER}">작성자</span>
+                                        <span class="dadat"><i class="fa-regular fa-comment-dots"></i> 답글</span>
+                                    </div>
+                                    <div class="comment-date" th:text="${comment.CREATED_AT}">날짜</div>
+                                </div>
+                                <a href="#" class="btn-report-small" data-bs-toggle="modal" data-bs-target="#reportModal" 
+                                   th:attr="data-report-type='COMMENT', data-report-target-id=${comment.ID}">
+                                    <i class="fa-solid fa-flag"></i> 신고
+                                </a>
+                            </div>
+                            <div class="comment-content-text" th:utext="${comment.CONTENT}"></div>
+                		</div>
+
+                        <div class="reply-container" th:each="replies : ${comment.REPLIES}">
+                			<div class="reply-card">
+                                <div class="comment-author-info">
+                                    <div class="avatar-circle" style="width:28px; height:28px;"><i class="fa-solid fa-user" style="font-size:12px;"></i></div>
+                                    <div>
+                                        <div class="writer-name" th:text="${replies.WRITER}">작성자</div>
+                                        <div class="comment-date" th:text="${replies.CREATED_AT}">날짜</div>
+                                    </div>
+                                    <a href="#" class="btn-report-small" data-bs-toggle="modal" data-bs-target="#reportModal" 
+                                       th:attr="data-report-type='COMMENT', data-report-target-id=${replies.ID}">
+                                        <i class="fa-solid fa-flag"></i> 신고
+                                    </a>
+                                </div>
+                                <div class="comment-content-text" th:utext="${replies.CONTENT}"></div>
+	                		</div>
+                		</div>
+
+                        <form class="hidden hiddenform mt-2 ms-md-5 ms-4" th:action="@{/gallery/insertComment/{id}(id=${galleryMap.ID})}" method="POST">
+		                	<input type="hidden" name="parent" th:value="${comment.ID}">
+		                    <textarea name="comment" placeholder="답글을 입력하세요..." required></textarea>
+		                    <div class="form-actions"><button type="submit">답글 등록</button></div>
+		                </form>
+                	</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <input type="hidden" id="galleryId" th:value="${galleryMap.ID}">
+	<div th:replace="~{fragments/reportModal :: reportModal}"></div>
+
+<script>
+    // 답글창 토글
+	document.addEventListener("click", function (e) {
+	    const target = e.target.closest(".dadat");
+        if (!target) return;
+	
+	    const li = target.closest("li.comment-list-li");
+	    const form = li.querySelector("form.hiddenform");
+	
+	    if (form) {
+	        const isHidden = form.classList.contains("hidden");
+            document.querySelectorAll(".hiddenform").forEach(f => f.classList.add("hidden")); // 모든 폼 닫기
+            if (isHidden) {
+                form.classList.remove("hidden");
+                form.querySelector("textarea").focus();
+            }
+	    }
+	});
+	
+    // 좋아요/싫어요 토글
+	function toggleReaction(type) {
+	    const galleryId = document.getElementById("galleryId").value;
+	    const likeBtn = document.getElementById("likeBtn");
+	    const dislikeBtn = document.getElementById("dislikeBtn");
+	    
+	    const isLiked = likeBtn.classList.contains("active");
+	    const isDisliked = dislikeBtn.classList.contains("active");
+	    
+	    let url = "", method = "";
+	    if (type === 1) {
+	        if (isLiked) { url = "/gallery/api/deleteReaction"; method = "DELETE"; }
+	        else if (isDisliked) { url = "/gallery/api/updateReaction"; method = "PUT"; }
+	        else { url = "/gallery/api/insertReaction"; method = "POST"; }
+	    } else {
+	        if (isDisliked) { url = "/gallery/api/deleteReaction"; method = "DELETE"; }
+	        else if (isLiked) { url = "/gallery/api/updateReaction"; method = "PUT"; }
+	        else { url = "/gallery/api/insertReaction"; method = "POST"; }
+	    }
+
+	    fetch(url, {
+	        method: method,
+	        headers: {
+	            "Content-Type": "application/json",
+	            [document.querySelector('meta[name="_csrf_header"]').content]: document.querySelector('meta[name="_csrf"]').content
+	        },
+	        body: JSON.stringify({ galleryId, reactionType: type })
+	    })
+	    .then(res => res.json())
+	    .then(data => {
+	        document.getElementById("like-count").innerText = data.likeCount;
+	        document.getElementById("dislike-count").innerText = data.dislikeCount;
+	        likeBtn.classList.toggle("active", data.userReaction === 1);
+	        dislikeBtn.classList.toggle("active", data.userReaction === 2);
+            
+            likeBtn.querySelector("i").className = data.userReaction === 1 ? "fa-solid fa-thumbs-up" : "fa-regular fa-thumbs-up";
+            dislikeBtn.querySelector("i").className = data.userReaction === 2 ? "fa-solid fa-thumbs-down" : "fa-regular fa-thumbs-down";
+	    });
+	}
+
+    // 삭제 확인
+	function confirmDelete(e, url) {
+	    e.preventDefault();
+	    showModal('confirm', '게시글 삭제', '정말로 삭제하시겠습니까?', () => {
+	        fetch(url, {
+	            method: 'DELETE',
+	            headers: { [document.querySelector('meta[name="_csrf_header"]').content]: document.querySelector('meta[name="_csrf"]').content }
+	        }).then(res => res.json()).then(data => {
+	            if (data.status === 1) window.location.href = '/gallery';
+	            else showModal('alert', '실패', '삭제에 실패했습니다.');
+	        });
+	    });
+	}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/report.js"></script>
+<div th:replace="~{include/bottom-navbar :: bottom-nav}"></div>
+</body>
+</html>

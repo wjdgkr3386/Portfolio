@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.neighbus.club.ClubMapper">
+
+	<sql id="regionWhere">
+		<if test="province>0">
+			and
+			province_id = #{province}
+		</if>
+		<if test="city>0">
+			and
+			city = #{city}
+		</if>
+		<if test="category>0">
+			and
+			category = #{category}
+		</if>
+	</sql>
+
+	<select id="getClubCategory" resultType="HashMap">
+		select
+			id,
+			name
+		from
+			club_categorys
+		order by
+			id asc
+	</select>
+
+	<insert id="insertClub"
+		parameterType="com.neighbus.club.ClubDTO"
+		useGeneratedKeys="true"
+		keyProperty="id">
+
+		INSERT INTO clubs (
+		club_name,
+		club_info,
+		category,
+		write_id,
+		city,
+		province_id,
+		club_img,
+		created_at
+		) VALUES (
+		#{clubName},
+		#{clubInfo},
+		#{category},
+		#{writeId},
+		#{city},
+		#{provinceId},
+		#{clubImageName},
+		NOW()
+		)
+	</insert>
+
+	<!-- 클럽 생성자를 club_members 테이블에 멤버로 추가 -->
+    <insert id="addCreatorAsMember" parameterType="com.neighbus.club.ClubDTO">
+        INSERT INTO club_members (club_id, user_id, created_at)
+        VALUES (#{id}, #{writeId}, NOW()) <!-- ClubDTO의 Id는 클럽 ID, writeId는 생성자 ID -->
+    </insert>
+
+	<select id="getMyClubs" parameterType="int"
+		resultType="com.neighbus.club.ClubDTO">
+		SELECT
+		c.id,
+		c.club_name AS clubName,
+		c.club_info AS clubInfo,
+		c.club_img AS clubImg,
+		ci.city AS cityName,
+		p.province AS provinceName,
+		c.created_at AS createdAt,
+		u.nickname AS writerNickname
+		FROM clubs c
+		JOIN club_members m ON c.id = m.club_id
+		LEFT JOIN provinces p ON c.province_id = p.id
+		LEFT JOIN cities ci ON c.city = ci.id
+		LEFT JOIN users u ON c.write_id = u.id
+		WHERE m.user_id = #{userId}
+		ORDER BY m.created_at DESC
+	</select>
+
+	<select id="getOderProvince" parameterType="int"
+		resultType="com.neighbus.club.ClubDTO">
+		SELECT
+		c.id,
+		c.club_name AS clubName,
+		c.city,
+		c.club_info AS clubInfo,
+		c.club_img AS clubImg,
+		ci.city AS cityName,
+		c.created_at AS createdAt,
+		p.province AS provinceName
+		FROM clubs c
+		LEFT JOIN provinces p ON c.province_id = p.id
+		LEFT JOIN cities ci ON c.city = ci.id
+		WHERE c.province_id = #{provinceId}
+	</select>
+
+	<select id="getOderCity" parameterType="map"
+		resultType="com.neighbus.club.ClubDTO">
+		SELECT
+		c.id,
+		c.club_name AS clubName,
+		c.city,
+		c.club_info AS clubInfo,
+		c.club_img AS clubImg,
+		ci.city AS cityName,
+		c.created_at AS createdAt,
+		p.province AS provinceName
+		FROM clubs c
+		LEFT JOIN provinces p ON c.province_id = p.id
+		LEFT JOIN cities ci ON c.city = ci.id
+		WHERE c.province_id = #{provinceId}
+		AND c.city = #{city}
+	</select>
+
+
+	<insert id="insertClubMember"
+		parameterType="com.neighbus.club.ClubMemberDTO">
+		INSERT INTO club_members (
+		club_id,
+		user_id,
+		created_at
+		) VALUES (
+		#{clubId}, #{userId}, NOW()
+		)
+	</insert>
+	<delete id="deleteClubMember" parameterType="map">
+		delete from club_members
+		where club_id= #{clubId} and user_id = #{userId}
+	</delete>
+
+	<select id="findAllClubs" resultType="com.neighbus.club.ClubDTO">
+		SELECT
+		c.id,
+		c.club_name AS clubName,
+		c.city,
+		c.club_info AS clubInfo,
+		c.club_img AS clubImg,
+		ci.city AS cityName,
+		c.created_at AS createdAt,
+		p.province AS provinceName
+		FROM clubs c
+		LEFT JOIN provinces p
+		ON c.province_id = p.id LEFT JOIN cities ci
+		ON c.city = ci.id
+	</select>
+	<select id="isMember" parameterType="com.neighbus.club.ClubMemberDTO"
+		resultType="int">
+		SELECT COUNT(*)
+		FROM club_members
+		WHERE club_id = #{clubId} AND user_id = #{userId}
+	</select>
+
+	<select id="getClubById" parameterType="int" resultType="com.neighbus.club.ClubDTO">
+		SELECT
+		  c.id,
+		  c.club_name      AS clubName,
+		  c.club_info      AS clubInfo,
+		  c.club_img       AS clubImg,
+		  c.write_id       AS writeId,
+		  ci.city          AS cityName,
+		  cate.name        AS categoryName,
+		  c.created_at     AS createdAt,
+		  p.province       AS provinceName
+		FROM clubs c
+		LEFT JOIN cities ci        ON c.city = ci.id
+		LEFT JOIN provinces p     ON c.province_id = p.id
+		LEFT JOIN club_categorys cate ON c.category = cate.id
+		WHERE c.id = #{id}
+
+	</select>
+
+	<select id="getMyClub" parameterType="HashMap" resultType="HashMap">
+		select
+		c.id AS id,
+		c.club_name AS clubName
+		from
+		clubs c
+		where
+		c.id in (select cm.club_id from club_members cm where cm.user_id=#{id})
+	</select>
+
+	<select id="getNewClub" resultType="HashMap" parameterType="com.neighbus.main.SearchDTO">
+		select
+			c.id as id,
+			c.club_name as clubName,
+			c.club_info as clubInfo,
+			c.province_id as provinceId,
+			c.city as cityId,
+			c.club_img as clubImg,
+			c.created_at as created,
+			count(m.user_id) as memberCount
+		from clubs c
+		left join club_members m on c.id = m.club_id
+		where 1=1
+		<include refid="regionWhere" />
+		group by c.id, c.club_name, c.club_info, c.province_id, c.city, c.club_img, c.created_at
+		order by c.id desc
+		limit 4;
+	</select>
+	
+	<select id="getPopularClub" resultType="HashMap" parameterType="com.neighbus.main.SearchDTO">
+		select
+			c.id as id,
+			c.club_name as clubName,
+			c.club_info as clubInfo,
+			c.province_id as provinceId,
+			c.city as cityId,
+			c.club_img as clubImg,
+			c.created_at as created,
+			count(m.user_id) as memberCount
+		from clubs c
+		left join club_members m on c.id = m.club_id
+		where 1=1
+		<include refid="regionWhere" />
+		group by c.id, c.club_name, c.club_info, c.province_id, c.city, c.club_img, c.created_at
+		order by memberCount desc
+		limit 4;
+	</select>
+
+
+	<select id="getClubCount" resultType="int"> SELECT count(*) FROM clubs c
+		LEFT JOIN provinces p ON c.province_id = p.id LEFT JOIN cities ci ON
+		c.city = ci.id <where>
+			<if test="keyword != null and keyword != ''">
+				and (c.club_name like concat('%', #{keyword}, '%')
+				or p.province like concat('%', #{keyword}, '%')
+				or ci.city like concat('%', #{keyword}, '%'))
+			</if>
+			<if test="category > 0">
+				and
+				c.category=#{category}
+			</if>
+		</where>
+	</select>
+
+	<select id="searchCnt" parameterType="com.neighbus.club.ClubDTO"
+		resultType="int"> SELECT count(*) FROM clubs c LEFT JOIN provinces p ON
+		c.province_id = p.id LEFT JOIN cities ci ON c.city = ci.id WHERE 1=1 <if
+			test="keyword != null and keyword != ''">
+			and (c.club_name like concat('%', #{keyword}, '%')
+			or p.province like concat('%', #{keyword}, '%')
+			or ci.city like concat('%', #{keyword}, '%'))
+		</if>
+            <if
+			test="category > 0">
+			and
+			c.category=#{category}
+		</if>
+	</select>
+	
+	<select id="getClubListCnt" parameterType="com.neighbus.club.ClubDTO" resultType="int">
+	    SELECT COUNT(*)
+	    FROM clubs c
+	    <where>
+	        <if test="keyword != null and keyword != ''">
+	            AND (
+	                c.club_name LIKE CONCAT('%', #{keyword}, '%') 
+	                OR c.club_info LIKE CONCAT('%', #{keyword}, '%')
+	            )
+	        </if>
+	        <if test="category != null and category > 0">
+	            AND c.category = #{category}
+	        </if>
+	        <if test="provinceId != null and provinceId > 0">
+	            AND c.province_id = #{provinceId}
+	        </if>
+	        <if test="city != null and city > 0">
+	            AND c.city = #{city}
+	        </if>
+	    </where>
+	</select>
+
+	<select id="getClubListWithPaging" parameterType="com.neighbus.club.ClubDTO" resultType="com.neighbus.club.ClubDTO">
+	    SELECT 
+	        c.id, 
+	        c.club_name AS clubName, 
+	        c.club_info AS clubInfo, 
+	        c.club_img AS clubImg, 
+	        c.created_at AS createdAt, 
+	        p.province AS provinceName, 
+	        ci.city AS cityName,
+	        c.category,
+	        (SELECT COUNT(*) FROM club_members WHERE club_id = c.id) AS memberCount
+	    FROM
+	        clubs c
+	        LEFT JOIN provinces p ON c.province_id = p.id
+	        LEFT JOIN cities ci ON c.city = ci.id
+	    <where>
+	        <if test="keyword != null and keyword != ''">
+	            AND (
+	                c.club_name LIKE CONCAT('%', #{keyword}, '%') 
+	                OR c.club_info LIKE CONCAT('%', #{keyword}, '%')
+	            )
+	        </if>
+	        
+	        <if test="category != null and category > 0">
+	            AND c.category = #{category}
+	        </if>
+	        
+	        <if test="provinceId != null and provinceId > 0">
+	            AND c.province_id = #{provinceId}
+	        </if>
+	        
+	        <if test="city != null and city > 0">
+	            AND c.city = #{city}
+	        </if>
+	    </where>
+	    ORDER BY c.id DESC 
+	    LIMIT #{beginRowNo}, #{rowCnt}
+	</select>
+
+	<select id="checkJoinClubCount" parameterType="int" resultType="int">
+		select count(*) from club_members where user_id=#{id}
+	</select>
+
+    <select id="getClubMembers" parameterType="int" resultType="map">
+        SELECT
+            cm.user_id AS userId,
+            u.username,
+            u.nickname
+        FROM club_members cm
+        JOIN users u ON cm.user_id = u.id
+        WHERE cm.club_id = #{clubId}
+        ORDER BY u.nickname ASC
+    </select>
+    
+    <delete id="removeClubMember" parameterType="map">
+        DELETE FROM club_members
+        WHERE club_id = #{clubId} AND user_id = #{userId}
+    </delete>
+
+    <!-- 동아리 폐쇄 (생성자만 가능) -->
+    <delete id="deleteClubByCreator" parameterType="map">
+        DELETE FROM clubs
+        WHERE id = #{clubId} AND write_id = #{creatorId}
+    </delete>
+
+    <select id="countByClubName" parameterType="java.lang.String" resultType="int">
+        SELECT COUNT(*) FROM clubs WHERE club_name = #{clubName}
+    </select>
+    
+    <select id="selectClubImagesByWriter" parameterType="int" resultType="string">
+        SELECT club_img FROM clubs WHERE write_id = #{userId}
+    </select>
+</mapper>

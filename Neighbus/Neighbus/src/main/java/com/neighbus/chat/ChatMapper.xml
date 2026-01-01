@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.neighbus.chat.ChatMapper">
+
+	<select id="findAllRooms" resultType="com.neighbus.chat.ChatRoomDTO">
+		SELECT * FROM chat_room ORDER BY created_at DESC
+	</select>
+
+	<insert id="insertRoom" parameterType="com.neighbus.chat.ChatRoomDTO">
+		INSERT INTO chat_room (
+		room_id,
+		room_name,
+		linked_recruitment_id,
+		user1_id,
+		user2_id,
+		created_at
+		) VALUES (
+		#{roomId},
+		#{roomName},
+		#{linkedRecruitmentId},
+		#{user1Id},
+		#{user2Id},
+		NOW()
+		)
+	</insert>
+	<select id="findRoomsByUsername"
+		resultType="com.neighbus.chat.ChatRoomDTO">
+		SELECT cr.*
+		FROM chat_room cr
+		JOIN recruitment_member rm ON cr.linked_recruitment_id =
+		rm.recruitment_id
+		JOIN users u ON rm.user_id = u.id
+		WHERE u.username = #{username}
+		AND cr.room_name != '친구 채팅'
+		ORDER BY cr.created_at DESC
+</select>
+
+	<insert id="insertMessage" parameterType="com.neighbus.chat.ChatMessageDTO">
+		INSERT INTO chat_message (room_id, sender, message, message_type,
+		created_at)
+		VALUES (#{roomId}, #{sender}, #{message}, #{messageType}, NOW())
+	</insert>
+
+	<select id="findMessagesByRoomId" resultType="com.neighbus.chat.ChatMessageDTO">
+	    SELECT 
+	        m.*, 
+	        u.nickname as senderNickname,
+	        u.image as senderImage  FROM chat_message m 
+	    JOIN users u ON m.sender = u.username 
+	    WHERE m.room_id = #{roomId}
+	    ORDER BY m.created_at ASC
+	</select>
+
+	<select id="findByRoomId" parameterType="String"
+		resultType="com.neighbus.chat.ChatRoomDTO">
+		SELECT * FROM chat_room WHERE room_id = #{roomId}
+	</select>
+
+</mapper>

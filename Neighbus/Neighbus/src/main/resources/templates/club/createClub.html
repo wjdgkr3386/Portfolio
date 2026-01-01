@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>새 동아리 생성 - NEIGHBUS</title>
+	<link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+	<link rel="stylesheet" href="/css/navibar.css">
+	<link rel="stylesheet" href="/css/bottom-navbar.css">
+	<link rel="stylesheet" href="/css/custom-modal.css">
+	<script src="/js/custom-modal.js"></script>
+	<style>
+		:root {
+			--bs-primary: #A67C52;
+			--bs-secondary: #8D6E63;
+			--bs-success: #5A8B73;
+			--bs-light: #FFF8F0;
+			--bs-white: #FFFFFF;
+			--bs-body-bg: var(--bs-light);
+			--bs-body-color: #5D4037;
+			--bs-border-color: #E8D7C3;
+		}
+
+		* { margin: 0; padding: 0; box-sizing: border-box; }
+
+		body {
+			font-family: 'SUIT', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+			background: var(--bs-body-bg);
+			color: var(--bs-body-color);
+			line-height: 1.5;
+		}
+
+		.main-wrapper {
+			min-height: 100vh;
+			padding: 80px 2rem;
+			background: linear-gradient(165deg, #FFF8F0 0%, #FFF5EB 50%, #FAF0E6 100%);
+		}
+
+		.page-title {
+			font-size: 3rem;
+			font-weight: 800;
+			text-align: center;
+			margin-bottom: 0.5rem;
+			color: var(--bs-body-color);
+            word-break: keep-all;
+		}
+
+		.page-subtitle {
+			font-size: 1.1rem;
+			text-align: center;
+			color: var(--bs-secondary);
+			margin-bottom: 3rem;
+            word-break: keep-all;
+		}
+
+		.form-card {
+			width: 100%;
+			max-width: 900px;
+			margin: 0 auto;
+			background: var(--bs-white);
+			border: 1px solid var(--bs-border-color);
+			border-radius: 24px;
+			box-shadow: 0 4px 20px rgba(166, 124, 82, 0.08);
+			padding: 3rem;
+		}
+
+		.form-group {
+			margin-bottom: 2rem;
+		}
+
+		.form-group:last-child {
+			margin-bottom: 0;
+		}
+
+		label {
+			display: block;
+			margin-bottom: 0.75rem;
+			color: var(--bs-body-color);
+			font-weight: 700;
+			font-size: 0.95rem;
+		}
+
+		.required {
+			color: var(--bs-primary);
+			margin-left: 4px;
+		}
+
+		.form-control,
+		.form-select {
+			font-family: 'SUIT', sans-serif;
+			font-size: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--bs-border-color);
+            padding: 0.8rem 1rem;
+            transition: all 0.3s;
+		}
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--bs-primary);
+            box-shadow: 0 0 0 3px rgba(166, 124, 82, 0.1);
+            outline: none;
+        }
+
+		textarea.form-control {
+			resize: vertical;
+			min-height: 150px;
+			line-height: 1.6;
+		}
+
+		.region-select-group {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 1rem;
+		}
+
+		.image-upload-area {
+			border: 2px dashed var(--bs-border-color);
+			border-radius: 16px;
+			padding: 2.5rem;
+			text-align: center;
+			background: #FFFBF7;
+			transition: all 0.3s ease;
+			cursor: pointer;
+		}
+
+		.image-upload-area:hover {
+			border-color: var(--bs-primary);
+			background: var(--bs-light);
+		}
+
+		.image-upload-area.has-image {
+			border-style: solid;
+			border-color: var(--bs-primary);
+			background: var(--bs-light);
+		}
+
+		.upload-icon {
+			font-size: 2.5rem;
+			color: var(--bs-primary);
+			margin-bottom: 1rem;
+		}
+
+		.upload-text {
+			color: var(--bs-secondary);
+			font-size: 0.95rem;
+            word-break: keep-all;
+		}
+
+		#clubImageInput { display: none; }
+
+		.preview-container {
+			margin-top: 1.5rem;
+			display: none;
+			text-align: center;
+		}
+
+		.preview-container.active { display: block; }
+
+		.preview-image {
+			max-width: 100%;
+			max-height: 300px;
+			border-radius: 12px;
+			border: 1px solid var(--bs-border-color);
+            object-fit: cover;
+		}
+
+		.remove-image-btn {
+			margin-top: 1rem;
+			padding: 0.5rem 1rem;
+			background: #dc3545;
+			color: white;
+			border: none;
+			border-radius: 8px;
+			cursor: pointer;
+			font-weight: 600;
+			transition: all 0.3s;
+		}
+
+		.remove-image-btn:hover { background: #c82333; }
+
+		.button-group {
+			display: flex;
+			gap: 1rem;
+			justify-content: center;
+			margin-top: 3rem;
+			padding-top: 2rem;
+			border-top: 1px solid var(--bs-border-color);
+		}
+        
+        .btn {
+            border-radius: 12px;
+            font-weight: 600;
+            padding: 0.8rem 2rem;
+        }
+
+		.btn-primary-custom {
+			background-color: var(--bs-primary);
+			color: var(--bs-white);
+			border: none;
+			transition: all 0.3s ease;
+		}
+
+		.btn-primary-custom:hover {
+			background-color: var(--bs-secondary);
+			color: var(--bs-white);
+            transform: translateY(-2px);
+		}
+
+		.btn-secondary-custom {
+			background-color: var(--bs-white);
+			color: var(--bs-secondary);
+			border: 1px solid var(--bs-border-color);
+			transition: all 0.3s ease;
+		}
+
+		.btn-secondary-custom:hover {
+			background-color: var(--bs-light);
+			color: var(--bs-body-color);
+		}
+
+		.error-message {
+			color: #dc3545;
+			font-size: 0.875em;
+			margin-top: 0.5rem;
+			display: none;
+            font-weight: 500;
+		}
+
+		.error-message.show { display: block; }
+
+        /* [반응형 미디어 쿼리] */
+        @media (max-width: 768px) {
+            .main-wrapper {
+                padding: 30px 1rem; /* 모바일 패딩 축소 */
+            }
+            .page-title {
+                font-size: 2rem; /* 타이틀 크기 축소 */
+                margin-top: 1rem;
+            }
+            .form-card {
+                padding: 1.5rem; /* 카드 패딩 축소 */
+                border-radius: 16px;
+            }
+            .region-select-group {
+                grid-template-columns: 1fr; /* 지역 선택 세로 배치 */
+            }
+            .button-group {
+                flex-direction: column; /* 버튼 세로 배치 */
+            }
+            .btn {
+                width: 100%; /* 버튼 꽉 차게 */
+            }
+            .image-upload-area {
+                padding: 1.5rem;
+            }
+        }
+	</style>
+</head>
+
+<body>
+	<div th:replace="~{include/navibar :: header-nav}"></div>
+
+	<div class="main-wrapper">
+		<h1 class="page-title">새 동아리 생성</h1>
+		<p class="page-subtitle">우리 동네에 새로운 모임을 만들고 이웃과 함께하세요.</p>
+
+		<div class="form-card">
+			<form id="myForm" th:action="@{/club/create}" th:object="${clubForm}" method="post"
+				enctype="multipart/form-data" novalidate>
+				<div class="form-group">
+					<label for="category">카테고리 <span class="required">*</span></label>
+					<select th:field="*{category}" class="form-select form-select-lg bg-white" required>
+						<option value="">카테고리를 선택해주세요</option>
+						<th:block th:each="category : ${categoryList}">
+							<option th:value="${category.id}" th:text="${category.name}"></option>
+						</th:block>
+					</select>
+					<p class="error-message" id="categoryError"></p>
+				</div>
+
+				<div class="form-group">
+					<label for="clubName">동아리 이름 <span class="required">*</span></label>
+					<input type="text" th:field="*{clubName}" class="form-control form-control-lg"
+						placeholder="예: 함께 걷는 동네 산책 모임" required>
+					<p class="error-message" id="clubNameError"></p>
+				</div>
+
+				<div class="form-group">
+					<label for="clubImage">대표 이미지 <span class="required">*</span></label>
+					<div class="image-upload-area" id="uploadArea">
+						<i class="fas fa-image upload-icon"></i>
+						<p class="upload-text">클릭하거나 이미지를 드래그하여 업로드 (최대 5MB)</p>
+						<input type="file" id="clubImageInput" name="clubImage" accept="image/*" required>
+					</div>
+					<p class="error-message" id="clubImageError"></p>
+
+					<div class="preview-container" id="previewContainer">
+						<img id="previewImage" class="preview-image" src="" alt="미리보기">
+						<button type="button" class="remove-image-btn" id="removeImageBtn">
+							<i class="fas fa-trash-alt me-1"></i> 이미지 제거
+						</button>
+					</div>
+				</div>
+
+				<div class="form-group">
+					<label for="province">활동 지역 <span class="required">*</span></label>
+					<div class="region-select-group">
+						<select id="province" name="provinceId" class="form-select form-select-lg bg-white" required>
+							<option value="" disabled selected>시/도 선택</option>
+							<option th:each="province : ${provinceList}" th:value="${province.id}"
+								th:text="${province.province}"></option>
+						</select>
+						<select id="city" name="city" class="form-select form-select-lg bg-white" required disabled>
+							<option value="" disabled selected>시/군/구 선택</option>
+						</select>
+					</div>
+					<p class="error-message" id="regionError"></p>
+				</div>
+
+				<div class="form-group">
+					<label for="clubInfo">동아리 소개 <span class="required">*</span></label>
+					<textarea th:field="*{clubInfo}" class="form-control form-control-lg"
+						placeholder="어떤 활동을 하는 동아리인지 자세히 알려주세요." required></textarea>
+					<p class="error-message" id="clubInfoError"></p>
+				</div>
+
+				<div class="button-group">
+					<a th:href="@{/club}" class="btn btn-lg btn-secondary-custom">취소</a>
+					<button type="submit" class="btn btn-lg btn-primary-custom"><i
+							class="bi bi-check-circle me-2"></i>동아리 생성하기</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<script th:inline="javascript">
+		const regionList = /*[[${regionList}]]*/ null;
+		const provinceSelect = document.getElementById('province');
+		const citySelect = document.getElementById('city');
+		const uploadArea = document.getElementById('uploadArea');
+		const clubImageInput = document.getElementById('clubImageInput');
+		const previewContainer = document.getElementById('previewContainer');
+		const previewImage = document.getElementById('previewImage');
+		const removeImageBtn = document.getElementById('removeImageBtn');
+
+		window.onload = function () {
+			initRegionSelect();
+			initImageUpload();
+		};
+
+		function initRegionSelect() {
+			provinceSelect.addEventListener('change', function () {
+				const selectedValue = parseInt(this.value, 10);
+				citySelect.innerHTML = '<option value="" disabled selected>시/군/구 선택</option>';
+
+				if (regionList && selectedValue) {
+					for (let i = 0; i < regionList.length; i++) {
+						if (selectedValue === regionList[i].province) {
+							const option = document.createElement('option');
+							option.value = regionList[i].id;
+							option.textContent = regionList[i].city;
+							citySelect.appendChild(option);
+						}
+					}
+					citySelect.disabled = false;
+				} else {
+					citySelect.disabled = true;
+				}
+			});
+		}
+
+		function initImageUpload() {
+			uploadArea.addEventListener('click', function () {
+				clubImageInput.click();
+			});
+
+			clubImageInput.addEventListener('change', function (e) {
+				const file = e.target.files[0];
+				if (file) {
+					if (file.size > 5 * 1024 * 1024) {
+						showModal('warning', '파일 크기 초과', '파일 크기는 5MB 이하여야 합니다.');
+						clubImageInput.value = '';
+						return;
+					}
+					if (!file.type.startsWith('image/')) {
+						showModal('warning', '파일 형식 오류', '이미지 파일만 업로드할 수 있습니다.');
+						clubImageInput.value = '';
+						return;
+					}
+					clubImageInput.removeAttribute('required');
+
+					const reader = new FileReader();
+					reader.onload = function (e) {
+						previewImage.src = e.target.result;
+						previewContainer.classList.add('active');
+						uploadArea.classList.add('has-image');
+					};
+					reader.readAsDataURL(file);
+				}
+			});
+
+			removeImageBtn.addEventListener('click', function (e) {
+                e.preventDefault(); // 기본 동작 방지
+				clubImageInput.value = '';
+				previewImage.src = '';
+				previewContainer.classList.remove('active');
+				uploadArea.classList.remove('has-image');
+				clubImageInput.setAttribute('required', 'required');
+			});
+
+			uploadArea.addEventListener('dragover', function (e) {
+				e.preventDefault();
+			});
+
+			uploadArea.addEventListener('drop', function (e) {
+				e.preventDefault();
+				const files = e.dataTransfer.files;
+				if (files.length > 0) {
+					clubImageInput.files = files;
+					clubImageInput.dispatchEvent(new Event('change'));
+				}
+			});
+		}
+
+		// 폼 제출 유효성 검사
+		const myForm = document.getElementById('myForm');
+		let isSubmitting = false;
+
+		myForm.addEventListener('submit', function (e) {
+			e.preventDefault();
+
+			if (isSubmitting) return;
+
+			let isValid = true;
+
+			// 유효성 검사 로직 (기존과 동일)
+			const categoryInput = document.getElementById('category');
+			const categoryError = document.getElementById('categoryError');
+			if (categoryInput.value === "") {
+				isValid = false;
+				categoryError.textContent = '카테고리를 선택해주세요.';
+				categoryError.classList.add('show');
+			} else {
+				categoryError.classList.remove('show');
+			}
+
+			const clubNameInput = document.getElementById('clubName');
+			const clubNameError = document.getElementById('clubNameError');
+			if (clubNameInput.value.trim() === "") {
+				isValid = false;
+				clubNameError.textContent = '동아리 이름을 입력해주세요.';
+				clubNameError.classList.add('show');
+			} else {
+				clubNameError.classList.remove('show');
+			}
+
+			const clubImageInput = document.getElementById('clubImageInput');
+			const clubImageError = document.getElementById('clubImageError');
+			if (clubImageInput.files.length === 0) {
+				isValid = false;
+				clubImageError.textContent = '대표 이미지를 선택해주세요.';
+				clubImageError.classList.add('show');
+			} else {
+				clubImageError.classList.remove('show');
+			}
+
+			const provinceInput = document.getElementById('province');
+			const cityInput = document.getElementById('city');
+			const regionError = document.getElementById('regionError');
+			if (provinceInput.value === "" || cityInput.value === "") {
+				isValid = false;
+				regionError.textContent = '활동 지역을 모두 선택해주세요.';
+				regionError.classList.add('show');
+			} else {
+				regionError.classList.remove('show');
+			}
+
+			const clubInfoInput = document.getElementById('clubInfo');
+			const clubInfoError = document.getElementById('clubInfoError');
+			if (clubInfoInput.value.trim() === "") {
+				isValid = false;
+				clubInfoError.textContent = '동아리 소개를 입력해주세요.';
+				clubInfoError.classList.add('show');
+			} else {
+				clubInfoError.classList.remove('show');
+			}
+
+			if (!isValid) {
+				showModal('warning', '필수 항목 누락', '모든 필수 항목을 입력하거나 선택해주세요.');
+				return;
+			}
+
+			const clubName = clubNameInput.value.trim();
+			isSubmitting = true;
+
+			fetch(`/api/club/checkName?clubName=${encodeURIComponent(clubName)}`)
+				.then(response => {
+					if (!response.ok) throw new Error('서버 응답이 올바르지 않습니다.');
+					return response.json();
+				})
+				.then(data => {
+					if (data.isDuplicate) {
+						clubNameError.textContent = '이미 사용 중인 동아리 이름입니다.';
+						clubNameError.classList.add('show');
+						showModal('error', '이름 중복', '이미 사용 중인 동아리 이름입니다.');
+						isSubmitting = false;
+					} else {
+						myForm.submit();
+					}
+				})
+				.catch(error => {
+					console.error('동아리 이름 중복 확인 중 오류:', error);
+					showModal('error', '서버 오류', '이름 중복 확인 중 오류가 발생했습니다.');
+					isSubmitting = false;
+				});
+		});
+	</script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

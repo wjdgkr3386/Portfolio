@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<title>마이페이지 - 동네친구</title>
+	<link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+	<link rel="stylesheet" href="/css/navibar.css">
+    <link rel="stylesheet" href="/css/bottom-navbar.css">
+	<link rel="stylesheet" href="/css/custom-modal.css">
+    <script src="/js/custom-modal.js"></script>
+
+	<style>
+		:root {
+			--primary: #A67C52; --primary-dark: #8D6E63;
+			--bg-ivory: #FFF8F0; --bg-warm: #FFF5EB; --bg-cream: #FAF0E6;
+			--card-bg: #FFFBF7; --text-primary: #5D4037; --text-secondary: #8D6E63;
+			--border-color: #E8D7C3; --white: #FFFFFF;
+            --secondary-light: #F5E6D3;
+		}
+
+		* { margin: 0; padding: 0; box-sizing: border-box; }
+		body {
+			font-family: 'SUIT', sans-serif;
+			background: linear-gradient(165deg, var(--bg-ivory) 0%, var(--bg-warm) 50%, var(--bg-cream) 100%);
+			color: var(--text-primary);
+			padding: 120px 20px 40px 20px;
+			min-height: 100vh;
+            overflow-x: hidden;
+		}
+
+		.container {
+			max-width: 1200px; margin: 0 auto;
+			display: grid; grid-template-columns: 320px 1fr; gap: 30px;
+		}
+
+		/* 프로필 카드 */
+		.profile-card {
+			background-color: var(--card-bg); border-radius: 24px;
+			box-shadow: 0 2px 8px rgba(166, 124, 82, 0.08); padding: 30px;
+			text-align: center; height: fit-content;
+		}
+		.profile-image-wrapper { position: relative; width: 140px; height: 140px; margin: 0 auto 20px; cursor: pointer; }
+		.profile-image { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 6px solid #FAF0E6; }
+        .profile-image-overlay { position: absolute; bottom: 5px; right: 5px; background: white; border-radius: 50%; padding: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); font-size: 14px; color: var(--text-secondary); }
+		
+        .profile-name { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+		.profile-nickname { font-size: 17px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+		.profile-email { font-size: 14px; color: var(--text-secondary); margin-bottom: 25px; word-break: break-all; }
+
+		.profile-stats {
+			display: flex; justify-content: space-around;
+			padding: 20px 0; border-top: 1px solid var(--border-color);
+			border-bottom: 1px solid var(--border-color); margin-bottom: 25px;
+		}
+		.stat-item { font-size: 18px; font-weight: 600; }
+		.stat-item span { display: block; font-size: 13px; color: var(--text-secondary); }
+
+        .btn { border-radius: 12px; font-weight: 600; padding: 12px; border: none; }
+		.btn-primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; }
+		.btn-secondary { background: var(--white); color: var(--text-primary); border: 2px solid var(--border-color); }
+		.btn-danger { background: linear-gradient(135deg, #C87E7E 0%, #B36A6A 100%); color: white; }
+        .profile-actions .btn { width: 100%; margin-bottom: 10px; }
+
+		/* 메인 컨텐츠 */
+		.main-content {
+			background-color: var(--card-bg); border-radius: 24px;
+			padding: 30px; box-shadow: 0 2px 8px rgba(166, 124, 82, 0.08);
+            min-width: 0;
+		}
+
+        /* 탭 스타일 */
+        .tabs-container {
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid var(--border-color); margin-bottom: 25px;
+        }
+		.tabs { display: flex; width: 100%; }
+		.tab-link {
+			padding: 15px 5px; cursor: pointer; font-size: 16px; font-weight: 600;
+			color: var(--text-secondary); border-bottom: 3px solid transparent;
+            margin-bottom: -1px; flex: 1; text-align: center; white-space: nowrap;
+		}
+		.tab-link.active { color: var(--primary); border-bottom-color: var(--primary); }
+        
+        .mobile-tab-nav { display: none; background: none; border: none; color: var(--primary); font-size: 1.2rem; padding: 10px; cursor: pointer; }
+
+		.tab-content { display: none; }
+		.tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+		.section-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+		.section-title i { color: var(--primary); }
+
+		/* 활동 리스트 공통 */
+		.activity-list .activity-item {
+			display: flex; align-items: center; padding: 18px 15px;
+			border-radius: 16px; text-decoration: none; color: inherit;
+            border-bottom: 1px solid rgba(0,0,0,0.03);
+		}
+        .activity-item:hover { background-color: var(--bg-warm); }
+		.activity-icon {
+			width: 42px; height: 42px; display: grid; place-items: center;
+			background: var(--secondary-light); border-radius: 50%; margin-right: 15px; flex-shrink: 0;
+		}
+        .activity-content { flex: 1; min-width: 0; }
+        .activity-content .title { font-size: 16px; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .activity-content .meta { font-size: 13px; color: var(--text-secondary); }
+        .activity-details { flex-shrink: 0; text-align: right; margin-left: 10px; }
+        .activity-details .time { font-size: 12px; color: #999; margin-bottom: 4px; }
+
+        /* [PC 전용 스타일] */
+        @media (min-width: 769px) {
+            .tab-group-1, .tab-group-2 { display: block !important; }
+            .mobile-tab-nav { display: none !important; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+            .info-item {
+                background: linear-gradient(135deg, var(--white) 0%, var(--bg-warm) 100%);
+                padding: 20px; border: 1px solid var(--border-color); border-radius: 16px;
+                display: flex; flex-direction: column; align-items: flex-start;
+            }
+            .info-label { margin-bottom: 8px; }
+            /* PC 버전 전화번호 박스 */
+            .phone-box { width: 100% !important; justify-content: space-between !important; }
+        }
+
+		/* [모바일 전용 스타일] */
+		@media (max-width: 768px) {
+			body { padding: 80px 10px 80px 10px; }
+            .container { grid-template-columns: 1fr; gap: 20px; }
+            .main-content { padding: 20px 15px; }
+            .mobile-tab-nav { display: block; }
+            .tab-group-2 { display: none !important; }
+            .info-grid { display: block; }
+            .info-item {
+                display: flex; justify-content: space-between; align-items: center;
+                padding: 15px 5px; border-bottom: 1px solid var(--border-color);
+                background: transparent; border-radius: 0;
+            }
+            .info-label { margin-bottom: 0; }
+            /* 모바일 버전 전화번호 박스 - 우측 정렬 유지 */
+            .phone-box { width: auto !important; justify-content: flex-end !important; gap: 10px; }
+		}
+
+		/* Modal Styles */
+		#editModal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+		#editModal.show { display: flex; }
+		#editModal .modal-content { background: var(--card-bg); padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 13px; color: var(--text-secondary); font-weight: 600; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; }
+	</style>
+</head>
+
+<body>
+	<div th:replace="~{include/navibar :: header-nav}"></div>
+
+	<div class="container">
+		<aside class="profile-card">
+			<div class="profile-image-wrapper" onclick="document.getElementById('profileImageInput').click()">
+				<img th:src="${myInfo.image}" class="profile-image">
+				<div class="profile-image-overlay"><i class="fas fa-camera"></i></div>
+			</div>
+			<form id="profileImageForm" th:action="@{/mypage/uploadProfileImage}" method="post" enctype="multipart/form-data" style="display: none;">
+				<input type="file" id="profileImageInput" name="profileImage" accept="image/*" onchange="confirmImageUpload(this)">
+			</form>
+			<h2 class="profile-name" th:text="${myInfo.name}"></h2>
+			<p class="profile-nickname" th:text="${myInfo.nickname}"></p>
+			<p class="profile-email" th:text="${myInfo.email}"></p>
+			<div class="profile-stats">
+				<div class="stat-item"><span th:text="${myPosts.size()}">0</span> 게시글</div>
+				<div class="stat-item"><span th:text="${myComments.size()}">0</span> 댓글</div>
+			</div>
+			<div class="profile-actions">
+				<button onclick="openEditModal()" class="btn btn-primary d-none d-lg-block">프로필 수정</button>
+				<a class="btn btn-primary" href="/mypage/passwordUpdate">비밀번호 변경</a>
+				<form th:action="@{/logout}" method="post" class="d-none d-lg-block">
+					<button type="submit" class="btn btn-secondary" style="width:100%">로그아웃</button>
+				</form>
+				<form th:action="@{/mypage/delMyUser}" method="post">
+					<button class="btn btn-danger" onclick="event.preventDefault(); showModal('confirm', '탈퇴', '정말 탈퇴하시겠습니까?', () => this.closest('form').submit());">회원 탈퇴</button>
+				</form>
+			</div>
+		</aside>
+
+		<main class="main-content">
+			<div class="tabs-container">
+                <button class="mobile-tab-nav nav-prev" onclick="toggleMobileTabGroup(0)" style="visibility: hidden;">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="tabs">
+                    <div class="tab-link tab-group-1 active" onclick="openTab(event, 'my-info')">내 정보</div>
+                    <div class="tab-link tab-group-1" onclick="openTab(event, 'my-posts')">작성 글</div>
+                    <div class="tab-link tab-group-1" onclick="openTab(event, 'my-comments')">작성 댓글</div>
+                    <div class="tab-link tab-group-2" onclick="openTab(event, 'my-clubs')">동아리</div>
+                    <div class="tab-link tab-group-2" onclick="openTab(event, 'my-recruitments')">모임</div>
+                </div>
+                <button class="mobile-tab-nav nav-next" onclick="toggleMobileTabGroup(1)">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+			</div>
+
+			<div id="my-info" class="tab-content active">
+				<h3 class="section-title"><i class="fas fa-user"></i>기본 정보</h3>
+				<div class="info-grid">
+					<div class="info-item"><div class="info-label">이름</div><div class="info-value" th:text="${myInfo.name}"></div></div>
+					<div class="info-item"><div class="info-label">아이디</div><div class="info-value" th:text="${myInfo.username}"></div></div>
+					<div class="info-item"><div class="info-label">지역</div><div class="info-value" th:text="${myInfo.city}"></div></div>
+					<div class="info-item">
+                        <div class="info-label">전화번호</div>
+                        <div class="info-value d-flex align-items-center phone-box">
+                            <span th:text="${myInfo.phone}"></span>
+                            <button th:if="${myInfo.grade == '인증 필요 유저'}" onclick="startPhoneVerification()" class="btn btn-primary" style="padding: 4px 10px; font-size: 11px; height: auto; margin: 0;">인증</button>
+                        </div>
+                    </div>
+					<div class="info-item"><div class="info-label">닉네임</div><div class="info-value" th:text="${myInfo.nickname}"></div></div>
+					<div class="info-item"><div class="info-label">등급</div><div class="info-value" th:text="${myInfo.grade}"></div></div>
+				</div>
+                <div class="d-lg-none mt-4"><button onclick="openEditModal()" class="btn btn-primary w-100">프로필 수정</button></div>
+			</div>
+
+            <div id="my-posts" class="tab-content">
+				<h3 class="section-title"><i class="fas fa-pencil-alt"></i>작성한 게시글</h3>
+				<div class="activity-list overflow-y-auto" style="max-height:500px;">
+					<a th:each="post : ${myPosts}" th:href="@{${post.postType == 'gallery' ? '/gallery/detail/' + post.postId : '/freeboard/' + post.postId}}" class="activity-item">
+						<div class="activity-icon"><i class="fas fa-file-alt"></i></div>
+						<div class="activity-content"><div class="title" th:text="${post.title}"></div><div class="meta" th:text="${post.postType == 'gallery' ? '갤러리' : '자유게시판'}"></div></div>
+						<div class="activity-details"><div class="time" th:text="${#strings.substring(post.createdAt, 0, 10)}"></div></div>
+					</a>
+				</div>
+			</div>
+
+            <div id="my-comments" class="tab-content">
+				<h3 class="section-title"><i class="fas fa-comment"></i>작성한 댓글</h3>
+				<div class="activity-list overflow-y-auto" style="max-height:500px;">
+					<a th:each="comment : ${myComments}" th:href="@{${comment.commentType == 'gallery' ? '/gallery/detail/' + comment.postId : '/freeboard/' + comment.postId}}" class="activity-item">
+						<div class="activity-icon"><i class="fas fa-comment-dots"></i></div>
+						<div class="activity-content"><div class="title" th:text="${comment.content}"></div><div class="meta" th:text="${comment.commentType == 'gallery' ? '갤러리' : '자유게시판'}"></div></div>
+						<div class="activity-details"><div class="time" th:text="${#strings.substring(comment.createdAt, 0, 10)}"></div></div>
+					</a>
+				</div>
+			</div>
+
+            <div id="my-clubs" class="tab-content">
+			    <h3 class="section-title"><i class="fas fa-users"></i>내 동아리</h3>
+			    <div class="activity-list overflow-y-auto" style="max-height:500px;">
+			        <a th:each="club : ${myClubs}" th:href="@{/club/{id}(id=${club.id})}" class="activity-item">
+			            <div class="activity-icon"><img th:if="${club.clubImg != null}" th:src="${club.clubImg}" style="width:100%;height:100%;object-fit:cover;"><i th:unless="${club.clubImg != null}" class="fas fa-users"></i></div>
+			            <div class="activity-content"><div class="title" th:text="${club.clubName}"></div><div class="meta" th:text="${club.cityName}"></div></div>
+                        <div class="activity-details"><span class="badge border" style="color:var(--primary)">참여중</span></div>
+			        </a>
+			    </div>
+			</div>
+
+            <div id="my-recruitments" class="tab-content">
+			    <h3 class="section-title"><i class="fas fa-calendar-check"></i>내 모임 리스트</h3>
+			    <div class="activity-list overflow-y-auto" style="max-height:500px;">
+			        <a th:each="recruit : ${recruitmentList}" th:href="@{/recruitment/{id}(id=${recruit.id})}" class="activity-item">
+			            <div class="activity-icon"><i class="fas fa-handshake"></i></div>
+			            <div class="activity-content"><div class="title" th:text="${recruit.title}"></div><div class="meta" th:text="${recruit.writer}"></div></div>
+			            <div class="activity-details"><div class="time" th:text="${recruit.meetingDate}"></div><span class="badge border" style="color:var(--primary)">모집중</span></div>
+			        </a>
+			    </div>
+			</div>
+		</main>
+	</div>
+
+	<div id="editModal" class="modal">
+		<div class="modal-content">
+			<div class="modal-header"><h3>프로필 수정</h3></div>
+			<form th:action="@{/mypage/update}" method="post">
+				<div class="form-group"><label>닉네임</label><input type="text" name="nickname" th:value="${myInfo.nickname}" required></div>
+				<div class="form-group">
+					<label>지역 선택</label>
+					<div class="d-flex gap-2">
+						<select id="provinceSelect" name="province" required>
+                            <option value="" disabled selected>시/도</option>
+							<option th:each="province : ${provinceList}" th:value="${province.id}" th:text="${province.province}"></option>
+						</select>
+						<select id="citySelect" name="city" required disabled><option value="">시/군/구</option></select>
+					</div>
+				</div>
+				<div class="d-flex gap-2 mt-4">
+					<button type="submit" class="btn btn-primary w-100">저장</button>
+					<button type="button" class="btn btn-secondary w-100" onclick="closeEditModal()">취소</button>
+				</div>
+			</form>
+		</div>
+	</div>
+	<form id="updateGradeForm" action="/account/updateGrade" method="post" style="display:none;"></form>
+	<script th:inline="javascript">
+		const regionList = /*[[${regionList}]]*/ [];
+
+		function openTab(evt, tabName) {
+			let i, tabcontent, tablinks;
+			tabcontent = document.getElementsByClassName("tab-content");
+			for (i = 0; i < tabcontent.length; i++) tabcontent[i].classList.remove("active");
+			tablinks = document.getElementsByClassName("tab-link");
+			for (i = 0; i < tablinks.length; i++) tablinks[i].classList.remove("active");
+			document.getElementById(tabName).classList.add("active");
+			evt.currentTarget.classList.add("active");
+		}
+
+        function toggleMobileTabGroup(direction) {
+            const group1 = document.querySelectorAll('.tab-group-1');
+            const group2 = document.querySelectorAll('.tab-group-2');
+            const prevBtn = document.querySelector('.nav-prev');
+            const nextBtn = document.querySelector('.nav-next');
+            if (direction === 1) {
+                group1.forEach(el => el.style.setProperty('display', 'none', 'important'));
+                group2.forEach(el => el.style.setProperty('display', 'block', 'important'));
+                prevBtn.style.visibility = 'visible'; nextBtn.style.visibility = 'hidden';
+                document.querySelector('.tab-group-2').click(); 
+            } else {
+                group1.forEach(el => el.style.setProperty('display', 'block', 'important'));
+                group2.forEach(el => el.style.setProperty('display', 'none', 'important'));
+                prevBtn.style.visibility = 'hidden'; nextBtn.style.visibility = 'visible';
+                document.querySelector('.tab-group-1').click();
+            }
+        }
+
+		function openEditModal() { document.getElementById('editModal').classList.add('show'); }
+		function closeEditModal() { document.getElementById('editModal').classList.remove('show'); }
+
+		document.addEventListener("DOMContentLoaded", () => {
+			const provinceSelect = document.getElementById('provinceSelect');
+			const citySelect = document.getElementById('citySelect');
+			provinceSelect.addEventListener('change', function() {
+				const pid = parseInt(this.value);
+				citySelect.innerHTML = '<option value="" disabled selected>선택</option>';
+				regionList.filter(r => r.province === pid).forEach(r => {
+					const opt = document.createElement('option');
+					opt.value = r.id; opt.textContent = r.city;
+					citySelect.appendChild(opt);
+				});
+				citySelect.disabled = false;
+			});
+		});
+
+		function confirmImageUpload(input) {
+			if (input.files && input.files[0]) {
+				showModal('confirm', '사진 변경', '프로필 사진을 변경하시겠습니까?', () => document.getElementById('profileImageForm').submit());
+			}
+		}
+		
+		function startPhoneVerification() {
+		    showModal('confirm', '본인 인증', '인증번호를 전송하시겠습니까?', () => {
+		        // 1. 문자 발송 요청
+		        fetch('/account/phoneVerification', { 
+		            method: 'POST', 
+		            headers: {'Content-Type': 'application/json'} 
+		        })
+		        .then(r => r.json())
+		        .then(data => {
+		            if (data.status === 1) {
+		                // 2. 인증번호 입력창
+		                showModal('prompt', '인증번호 입력', '문자로 전송된 번호를 입력하세요.', (userCode) => {
+		                    
+		                    // 3. 번호 비교
+		                    if (String(userCode) === String(data.code)) {
+		                        
+		                        // 인증 성공 시 -> 폼을 제출하여 컨트롤러("/updateGrade") 호출
+		                        showModal('success', '성공', '인증되었습니다. 등급이 변경됩니다.', () => {
+		                            document.getElementById('updateGradeForm').submit();
+		                        });
+
+		                    } else {
+		                        showModal('error', '실패', '인증번호가 일치하지 않습니다.');
+		                    }
+		                });
+		            } else {
+		                showModal('error', '실패', '전송 실패');
+		            }
+		        });
+		    });
+		}
+	</script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

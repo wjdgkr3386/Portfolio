@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(pageTitle='문의 관리', activeMenu='inquiries', content=~{:: #inquiries-content})}">
+<body>
+    <div id="inquiries-content">
+        <div class="page-header">
+            <h1>문의 관리</h1>
+            <p>사용자들의 문의를 확인하고 답변합니다.</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stat-cards-grid">
+            <div class="stat-card">
+                <div class="icon"><i class="fa-solid fa-envelope"></i></div>
+                <div class="info"><p class="title">총 문의</p><p class="value" id="total-inquiries">0</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="icon"><i class="fa-solid fa-clock"></i></div>
+                <div class="info"><p class="title">처리 대기</p><p class="value" id="pending-inquiries">0</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="icon"><i class="fa-solid fa-check-circle"></i></div>
+                <div class="info"><p class="title">답변 완료</p><p class="value" id="answered-inquiries">0</p></div>
+            </div>
+        </div>
+
+        <!-- Table and Filters -->
+        <div class="content-panel" style="margin-top: 2rem;">
+            <div class="search-controls">
+                <input type="text" id="search-input" placeholder="제목 또는 작성자로 검색...">
+                <select id="status-filter">
+                    <option value="">전체 상태</option>
+                    <option value="1">처리 대기</option>
+                    <option value="2">답변 완료</option>
+                </select>
+            </div>
+            <div class="table-wrapper" style="overflow-x: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th id="sort-by-id" style="cursor: pointer;">ID <i class="fa-solid fa-sort"></i></th>
+                            <th>유형</th>
+                            <th>작성자</th>
+                            <th>제목</th>
+                            <th id="sort-by-date" style="cursor: pointer;">작성일 <i class="fa-solid fa-sort"></i></th>
+                            <th>상태</th>
+                            <th class="actions">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inquiry-table-body">
+                        <!-- JS로 채워짐 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Answer Modal -->
+        <div id="answerModal" class="modal">
+            <div class="modal-content">
+                <form id="answerForm">
+                    <div class="modal-header">
+                        <h2 id="answer-modal-title">문의 답변</h2>
+                        <button type="button" class="close-button" onclick="closeAdminModal('answerModal')">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="answer-inquiry-id">
+                        <div class="detail-grid">
+                            <strong>작성자:</strong> <span id="detail-author"></span>
+                            <strong>제목:</strong> <span id="detail-title"></span>
+                            <strong>문의 내용:</strong> <p id="detail-content" style="max-height: 150px; overflow-y: auto;"></p>
+                        </div>
+                        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
+                        <div class="form-group">
+                            <label for="answer-content" style="font-weight: 600;">답변 내용</label>
+                            <textarea id="answer-content" required placeholder="문의에 대한 답변을 작성해주세요..." style="width: 100%; min-height: 120px; padding: 0.75rem; border: 1px solid var(--border-color); font-size: 1rem; resize: vertical;"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-modal" onclick="closeAdminModal('answerModal')">취소</button>
+                        <button type="submit" class="btn btn-primary btn-modal btn-submit">답변 등록</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            let allInquiries = [];
+            let filteredInquiries = [];
+            let currentSortField = 'id';
+            let sortOrders = {
+                'id': 'desc',
+                'date': 'desc'
+            };
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const style = document.createElement('style');
+                style.innerHTML = `
+                    .status-badge { padding: 4px 10px; border-radius: 12px; font-weight: 600; font-size: 0.8rem; }
+                    .status-badge.pending { background: #FEF3C7; color: #92400E; }
+                    .status-badge.answered { background: var(--accent-green-light); color: var(--accent-green); }
+                `;
+                document.head.appendChild(style);
+
+                fetchInquiries();
+
+                document.getElementById('search-input').addEventListener('input', applyFiltersAndSort);
+                document.getElementById('status-filter').addEventListener('change', applyFiltersAndSort);
+                document.getElementById('answerForm').addEventListener('submit', handleAnswerSubmit);
+
+                document.getElementById('sort-by-id').addEventListener('click', () => handleSort('id'));
+                document.getElementById('sort-by-date').addEventListener('click', () => handleSort('date'));
+            });
+
+            function handleSort(field) {
+                sortOrders[field] = sortOrders[field] === 'desc' ? 'asc' : 'desc';
+                currentSortField = field;
+                applyFiltersAndSort();
+            }
+
+            async function fetchInquiries() {
+                try {
+                    const response = await fetch('/api/inquiry/admin/list');
+                    if (!response.ok) throw new Error('문의 목록을 불러오는데 실패했습니다.');
+                    const result = await response.json();
+                    if (result.status === 1) {
+                        allInquiries = result.data.map(inquiry => ({
+                            ...inquiry,
+                            date: inquiry.created_at ? new Date(inquiry.created_at) : null
+                        }));
+                        applyFiltersAndSort();
+                    } else {
+                        showModal('error', '조회 실패', result.message);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    showModal('error', '오류 발생', error.message);
+                }
+            }
+
+            function applyFiltersAndSort() {
+                const searchTerm = document.getElementById('search-input').value.toLowerCase();
+                const statusFilter = document.getElementById('status-filter').value;
+                filteredInquiries = allInquiries.filter(i => {
+                    const writerName = i.writer_name || '';
+                    const matchesSearch = i.title.toLowerCase().includes(searchTerm) || writerName.toLowerCase().includes(searchTerm);
+                    const matchesStatus = !statusFilter || i.state == statusFilter;
+                    return matchesSearch && matchesStatus;
+                });
+
+                // Sort logic
+                filteredInquiries.sort((a, b) => {
+                    const field = currentSortField;
+                    const order = sortOrders[field];
+                    
+                    let valA = a[field];
+                    let valB = b[field];
+
+                    if (field === 'date') {
+                        valA = a.date;
+                        valB = b.date;
+                    }
+
+                    if (valA < valB) {
+                        return order === 'asc' ? -1 : 1;
+                    }
+                    if (valA > valB) {
+                        return order === 'asc' ? 1 : -1;
+                    }
+                    return 0;
+                });
+
+                updateStats();
+                renderTable();
+            }
+
+            function updateStats() {
+                document.getElementById('total-inquiries').textContent = allInquiries.length;
+                document.getElementById('pending-inquiries').textContent = allInquiries.filter(i => i.state === 1).length;
+                document.getElementById('answered-inquiries').textContent = allInquiries.filter(i => i.state === 2).length;
+            }
+
+            function renderTable() {
+                const tableBody = document.getElementById('inquiry-table-body');
+                tableBody.innerHTML = '';
+                if (filteredInquiries.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 3rem;">표시할 문의가 없습니다.</td></tr>';
+                    return;
+                }
+                filteredInquiries.forEach(inquiry => {
+                    const stateText = inquiry.state === 1 ? '처리 대기' : '답변 완료';
+                    const stateClass = inquiry.state === 1 ? 'pending' : 'answered';
+                    const actionButton = `<button class="btn btn-secondary" onclick="showAnswerModal(${inquiry.id})">${inquiry.state === 1 ? '답변하기' : '내용보기'}</button>`;
+                    const row = `
+                        <tr>
+                            <td>${inquiry.id}</td>
+                            <td>${inquiry.category}</td>
+                            <td>${inquiry.writer_name}</td>
+                            <td>${inquiry.title}</td>
+                            <td>${inquiry.date ? inquiry.date.toISOString().slice(0, 10) : '-'}</td>
+                            <td><span class="status-badge ${stateClass}">${stateText}</span></td>
+                            <td class="actions">
+                                ${actionButton}
+                                <button class="btn btn-danger" onclick="deleteInquiry(${inquiry.id})"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            }
+
+            async function showAnswerModal(id) {
+                try {
+                    const response = await fetch(`/api/inquiry/admin/${id}`);
+                    if (!response.ok) throw new Error('상세 정보를 불러오지 못했습니다.');
+                    const result = await response.json();
+
+                    if (result.status === 1) {
+                        const inquiry = result.data;
+                        document.getElementById('detail-author').textContent = `${inquiry.writer_name} (${inquiry.writer_username || 'N/A'})`;
+                        document.getElementById('detail-title').textContent = inquiry.title;
+                        document.getElementById('detail-content').textContent = inquiry.content;
+                        document.getElementById('answer-inquiry-id').value = inquiry.id;
+
+                        const answerContentTextarea = document.getElementById('answer-content');
+                        const answerSubmitBtn = document.querySelector('#answerForm .btn-submit');
+                        const modalTitle = document.getElementById('answer-modal-title');
+
+                        if (inquiry.state === 2 && inquiry.comments && inquiry.comments.length > 0) {
+                            answerContentTextarea.value = inquiry.comments[0].content;
+                            answerContentTextarea.readOnly = true;
+                            answerSubmitBtn.style.display = 'none';
+                            modalTitle.textContent = '문의 및 답변 내용';
+                        } else {
+                            answerContentTextarea.value = '';
+                            answerContentTextarea.readOnly = false;
+                            answerSubmitBtn.style.display = 'inline-block';
+                            modalTitle.textContent = '문의 답변';
+                        }
+                        document.getElementById('answerModal').style.display = 'block';
+                    } else {
+                        showModal('error', '조회 실패', result.message);
+                    }
+                } catch (error) {
+                    showModal('error', '오류 발생', error.message);
+                }
+            }
+
+            async function handleAnswerSubmit(event) {
+                event.preventDefault();
+                const inquiryId = document.getElementById('answer-inquiry-id').value;
+                const content = document.getElementById('answer-content').value;
+                if (!content.trim()) { showModal('warning', '답변 입력 필요', '답변 내용을 입력해주세요.'); return; }
+
+                try {
+                    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+                    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+                    const headers = { 'Content-Type': 'application/json' };
+                    headers[csrfHeader] = csrfToken;
+
+                    const response = await fetch('/api/inquiry/admin/add-comment', {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify({ inquiryId: parseInt(inquiryId), content: content })
+                    });
+                    const result = await response.json();
+                    if (result.status === 1) {
+                        closeAdminModal('answerModal');
+                        showModal('success', '답변 등록 완료', '답변이 성공적으로 등록되었습니다.', () => {
+                            fetchInquiries();
+                        });
+                    } else {
+                        showModal('error', '등록 실패', '답변 등록 실패: ' + result.message);
+                    }
+                } catch (error) {
+                    console.error('Error submitting answer:', error);
+                    showModal('error', '오류 발생', '답변 등록 중 오류가 발생했습니다.');
+                }
+            }
+
+            async function deleteInquiry(id) {
+                showModal('confirm', '문의 삭제', '정말로 이 문의를 삭제하시겠습니까?', async () => {
+                    try {
+                        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+                        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+                        const headers = { 'Content-Type': 'application/json' };
+                        headers[csrfHeader] = csrfToken;
+
+                        const response = await fetch('/api/inquiry/admin/delete', {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify({ id })
+                        });
+                        const result = await response.json();
+                        if (result.status === 1) {
+                            showModal('success', '삭제 완료', result.message, () => {
+                                fetchInquiries();
+                            });
+                        } else {
+                            showModal('error', '삭제 실패', result.message);
+                        }
+                    } catch (error) {
+                        showModal('error', '오류 발생', '삭제 중 오류가 발생했습니다.');
+                    }
+                });
+            }
+
+            function closeAdminModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) modal.style.display = 'none';
+            }
+
+            window.onclick = function(event) {
+                if (event.target.classList.contains('modal')) {
+                    closeAdminModal(event.target.id);
+                }
+            }
+        </script>
+    </div>
+</body>
+</html>

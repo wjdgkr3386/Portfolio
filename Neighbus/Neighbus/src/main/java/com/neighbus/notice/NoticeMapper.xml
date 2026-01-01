@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.neighbus.notice.NoticeMapper">
+
+    <!-- 전체 공지사항 조회 -->
+    <select id="selectAllNotices" resultType="map">
+        SELECT
+            n.id,
+            n.title,
+            n.content,
+            n.created_at,
+            u.name AS writer_name
+        FROM notices n
+        JOIN users u ON n.writer = u.id
+        ORDER BY n.created_at DESC
+    </select>
+
+    <!-- 공지사항 상세 조회 -->
+    <select id="selectNoticeById" parameterType="int" resultType="map">
+        SELECT
+            n.id,
+            n.title,
+            n.content,
+            n.created_at,
+            n.writer,
+            u.name AS writer_name
+        FROM notices n
+        JOIN users u ON n.writer = u.id
+        WHERE n.id = #{id}
+    </select>
+
+    <!-- 공지사항 등록 -->
+    <insert id="insertNotice" parameterType="com.neighbus.notice.NoticeDto">
+        INSERT INTO notices (title, content, writer, created_at)
+        VALUES (
+            #{title},
+            #{content},
+            #{writer},
+            NOW()
+        )
+    </insert>
+
+    <!-- 공지사항 수정 -->
+    <update id="updateNotice" parameterType="com.neighbus.notice.NoticeDto">
+        UPDATE notices
+        SET
+            title = #{title},
+            content = #{content}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 공지사항 삭제 -->
+    <delete id="deleteNotice" parameterType="int">
+        DELETE FROM notices
+        WHERE id = #{id}
+    </delete>
+
+</mapper>

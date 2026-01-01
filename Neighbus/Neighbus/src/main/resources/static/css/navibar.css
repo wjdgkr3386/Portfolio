@@ -1,0 +1,174 @@
+/* * NEIGHBUS Navigation Bar Dedicated CSS
+ * 위치: /static/css/navibar.css
+ * 설명: 모든 페이지에서 동일한 디자인을 유지하기 위한 강제 스타일 적용
+ */
+
+/* 1. 네비게이션 범위 격리 (.nb-navbar) */
+.nb-navbar {
+    /* 배경 및 테두리 */
+    background-color: #FFFBF7 !important;
+    border-bottom: 1px solid #E8D7C3 !important;
+    box-shadow: 0 2px 10px rgba(166, 124, 82, 0.1) !important;
+    
+    
+    font-size: 16px !important; 
+    line-height: 1.5 !important;
+    
+    /* [수정] 네비바 높이 및 여백 픽셀 단위로 고정 */
+    padding-top: 8px !important;    /* 0.5rem -> 8px 고정 */
+    padding-bottom: 8px !important; /* 0.5rem -> 8px 고정 */
+    min-height: 60px !important;    /* 네비바 최소 높이 고정 */
+}
+
+/* [추가] 컨테이너 내부 정렬 및 여백 강제 고정 (메인 페이지 초기화 충돌 방지) */
+.nb-navbar > .container {
+    display: flex !important;
+    align-items: center !important; /* 수직 중앙 정렬 */
+    flex-wrap: nowrap !important;
+    
+    /* [핵심 해결] 메인 페이지의 * {padding:0} 무시하고 부트스트랩 기본 여백 강제 적용 */
+    padding-left: 12px !important;  
+    padding-right: 12px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+/* 2. 브랜드 로고 (.nb-brand) */
+.nb-brand {
+    /* [수정] 폰트 크기와 여백을 px로 고정하여 변형 방지 */
+    font-weight: 800 !important;
+    font-size: 24px !important;      /* 1.5rem -> 24px 절대값 고정 */
+    color: #5D4037 !important;
+    text-decoration: none !important;
+    
+    /* [핵심] 로고 위치 고정 (외부 CSS 간섭 차단) */
+    padding-top: 5px !important;     /* 부트스트랩 기본값 0.3125rem 대응 */
+    padding-bottom: 5px !important;
+    margin-right: 16px !important;   /* 1rem -> 16px 고정 */
+    line-height: 1 !important;       /* 줄간격으로 인한 높이 변화 방지 */
+    white-space: nowrap !important;  /* 줄바꿈 방지 */
+}
+
+/* 3. 메뉴 링크 (.nb-nav-link) */
+.nb-nav-link {
+    font-weight: 600 !important;
+    color: #8D6E63 !important;
+    margin: 0 8px !important;        /* 0.5rem -> 8px */
+    font-size: 16px !important;      /* 1rem -> 16px */
+    padding: 8px !important;         /* 클릭 영역 확보 및 높이 고정 */
+}
+
+.nb-nav-link:hover,
+.nb-nav-link.active {
+    color: #A67C52 !important;
+}
+
+/* 4. 버튼 스타일 격리 (.nb-btn-*) */
+.nb-btn-primary {
+    background-color: #A67C52 !important;
+    border: 1px solid #A67C52 !important;
+    color: #FFFFFF !important;
+    font-weight: 600 !important;
+    padding: 6px 16px !important;    /* rem -> px 변환 */
+    border-radius: 8px !important;
+    font-family: inherit !important; 
+    font-size: 14px !important;      /* 버튼 폰트 크기 고정 */
+}
+
+.nb-btn-outline {
+    background-color: transparent !important;
+    border: 1px solid #A67C52 !important;
+    color: #A67C52 !important;
+    font-weight: 600 !important;
+    padding: 6px 16px !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+}
+
+.nb-btn-primary:hover {
+    background-color: #8D6E63 !important;
+    border-color: #8D6E63 !important;
+    transform: translateY(-2px);
+}
+
+.nb-btn-outline:hover {
+    background-color: #A67C52 !important;
+    color: #FFFFFF !important;
+    transform: translateY(-2px);
+}
+
+/* 5. 드롭다운 메뉴 격리 */
+.nb-dropdown-menu {
+    border-radius: 8px !important;
+    border: 1px solid #E8D7C3 !important;
+    box-shadow: 0 5px 15px rgba(166, 124, 82, 0.1) !important;
+    background-color: #FFFFFF !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    margin-top: 10px !important; /* 드롭다운 위치 미세 조정 */
+}
+
+.nb-dropdown-item {
+    color: #8D6E63 !important;
+    font-weight: 500 !important;
+    font-size: 16px !important;
+    padding: 8px 16px !important;
+}
+
+.nb-dropdown-item:hover {
+    background-color: rgba(166, 124, 82, 0.1) !important;
+    color: #5D4037 !important;
+}
+
+/* 6. 아이콘 및 프로필 이미지 */
+.nb-mobile-gap {
+    gap: 1.25rem !important; /* 아이콘 간격 확대 */
+    display: flex !important;
+    align-items: center !important;
+}
+
+@media (max-width: 991px) {
+    .nb-mobile-gap {
+        gap: 0.75rem !important; /* 모바일에서는 약간 축소 */
+    }
+}
+
+.nb-profile-link {
+    margin-left: 4px !important;
+    align-items: center !important;
+}
+
+/* PC 화면에서만 보임 (992px 이상) */
+@media (min-width: 992px) {
+    .nb-profile-link {
+        display: flex !important;
+    }
+}
+
+/* 모바일/태블릿 화면에서 숨김 (991px 이하) */
+@media (max-width: 991px) {
+    .nb-profile-link {
+        display: none !important;
+    }
+}
+
+.nb-profile-img {
+    width: 38px !important;
+    height: 38px !important;
+    object-fit: cover !important;
+    border: 1px solid #E8D7C3 !important;
+    border-radius: 50% !important;
+}
+
+.nb-icon-link {
+    color: #5D4037 !important;
+    transition: color 0.2s ease !important;
+}
+
+.nb-icon-link:hover {
+    color: #A67C52 !important;
+}
+
+/* 7. 헤더 공간 확보 */
+body {
+    padding-top: 80px !important;
+}

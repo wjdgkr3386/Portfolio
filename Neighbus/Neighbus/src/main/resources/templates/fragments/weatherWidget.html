@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="weatherWidget">
+
+    <style>
+        #mini-weather {
+            /* [수정] position:fixed 제거 -> 일반 블록 요소로 변경 */
+            width: 100%;
+            margin-bottom: -2.0rem; /* 다른 사이드바 요소와 간격 맞춤 */
+            
+            background: rgba(255, 255, 255, 0.6); /* 반투명 배경 */
+            backdrop-filter: blur(5px);
+            padding: 15px 20px; /* 패딩 조정 */
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            
+            display: flex;
+            align-items: center;
+            gap: 15px; /* 간격 조정 */
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 1rem; /* 폰트 크기 조정 */
+            font-weight: bold;
+            color: #333;
+            transition: 0.3s;
+        }
+        #mini-weather:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: scale(1.02); /* 호버 효과 약간 줄임 */
+            cursor: pointer;
+        }
+        .mini-icon { width: 40px; height: 40px; } /* 아이콘 크기 조정 */
+    </style>
+
+    <div id="mini-weather" title="클릭하면 새로고침">
+        <span id="w-loading" class="spinner-border spinner-border-sm" role="status"></span>
+        
+        <div id="w-content" style="display: none; align-items: center;">
+            <img id="w-icon" src="" class="mini-icon">
+            <span id="w-temp">0°</span>
+            <span id="w-desc" style="font-size: 0.8rem; color: #555; margin-left: 5px;">날씨</span>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            getMiniWeather();
+        });
+
+        // 클릭하면 날씨 새로고침
+        document.getElementById("mini-weather").addEventListener("click", getMiniWeather);
+
+        function getMiniWeather() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(fetchWeather, (err) => {
+                    console.log("위치 권한 거부됨");
+                    document.getElementById("w-loading").style.display = "none";
+                    document.getElementById("mini-weather").innerText = "위치 권한 필요";
+                });
+            }
+        }
+
+        function fetchWeather(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+
+            fetch(`/weather/current?lat=${lat}&lon=${lon}`)
+                .then(res => res.json())
+                .then(data => {
+                    // 데이터 넣기
+                    document.getElementById("w-temp").innerText = Math.round(data.temp) + "°";
+                    document.getElementById("w-desc").innerText = data.desc; // "박무" 해결된 텍스트
+                    document.getElementById("w-icon").src = `https://openweathermap.org/img/wn/${data.icon}.png`;
+
+                    // 로딩 끄고 내용 보여주기
+                    document.getElementById("w-loading").style.display = "none";
+                    document.getElementById("w-content").style.display = "flex";
+                })
+                .catch(err => console.error("날씨 에러:", err));
+        }
+    </script>
+</div>
+</html>

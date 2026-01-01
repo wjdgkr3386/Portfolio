@@ -1,0 +1,183 @@
+/* =================================================================
+   Master Stylesheet for NEIGHBUS
+   - Single Source of Truth for the entire application theme.
+   ================================================================= */
+
+/* 1. Theme Variables
+----------------------------------------------------------------- */
+:root {
+    --primary: #A67C52;
+    --primary-dark: #8D6E63;
+    --primary-light: #C9A88A;
+    --body-bg: #FAF6F1;
+    --card-bg: #FFFBF7;
+    --text-primary: #5D4037;
+    --text-secondary: #8D6E63;
+    --text-light: #A1887F;
+    --border-color: #E8D7C3;
+    --white: #FFFFFF;
+    --shadow-color: rgba(166, 124, 82, 0.1);
+    --shadow-hover: rgba(166, 124, 82, 0.2);
+    --danger: #C87E7E;
+    --success: #5A8B73;
+}
+
+/* 2. Global Styles & Body
+----------------------------------------------------------------- */
+body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    background: var(--body-bg);
+    color: var(--text-primary);
+    padding-top: 90px; /* Default padding for fixed header */
+}
+
+.main-wrapper {
+    min-height: 100vh;
+    padding: 4rem 2rem;
+}
+
+.container, .container-custom {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+/* 3. Navbar / Header (from navibar.css)
+----------------------------------------------------------------- */
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030;
+    padding: 1.5rem 0;
+    background: transparent;
+    transition: all 0.3s ease;
+}
+.header.scrolled {
+    background: rgba(250, 246, 241, 0.95); /* body-bg with alpha */
+    backdrop-filter: blur(10px);
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 2px 15px var(--shadow-color);
+}
+.header-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.logo { font-size: 1.5rem; font-weight: 800; color: var(--text-primary); text-decoration: none; }
+.nav-menu { display: flex; gap: 3rem; list-style: none; padding-left: 0; margin-bottom: 0; }
+.nav-menu a { color: var(--text-secondary); text-decoration: none; font-size: 1rem; font-weight: 600; transition: color 0.2s ease; }
+.nav-menu a:hover { color: var(--primary); }
+.header-actions { display: flex; gap: 1rem; align-items: center; }
+.btn-header {
+    padding: 0.6rem 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border-radius: 50rem;
+}
+.btn-header:hover { background: var(--primary); color: var(--white); border-color: var(--primary); }
+.btn-header.primary { background: var(--primary); color: var(--white); border-color: var(--primary); }
+.btn-header.primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+
+.profile-dropdown .dropdown-menu {
+    border-color: var(--border-color);
+    background-color: var(--card-bg);
+    box-shadow: 0 5px 25px var(--shadow-color);
+    padding: 0.5rem 0;
+}
+.profile-dropdown .dropdown-item {
+    color: var(--text-secondary);
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+}
+.profile-dropdown .dropdown-item:hover { background-color: var(--body-bg); color: var(--text-primary); }
+.profile-dropdown .dropdown-item.text-danger { color: var(--danger); }
+.profile-dropdown .dropdown-item.text-danger:hover { background-color: #F8E5E5; }
+
+/* 4. Page-specific & Common Component Styles
+----------------------------------------------------------------- */
+.page-header { text-align: center; margin-bottom: 4rem; }
+.page-title { font-size: 4rem; font-weight: 800; margin-bottom: 1rem; }
+.page-subtitle { font-size: 1.3rem; color: var(--text-secondary); }
+
+.btn {
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+.btn-primary { background: var(--primary); color: var(--white); border-color: var(--primary); }
+.btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+.btn-secondary { background: var(--white); color: var(--text-secondary); border-color: var(--border-color); }
+.btn-secondary:hover { background: var(--body-bg); }
+
+.form-control {
+    border: 1px solid var(--border-color);
+    padding: 0.8rem 1rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+}
+.form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(166, 124, 82, 0.1);
+    outline: none;
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2.5rem;
+}
+.club-card, .recruitment-card, .gallery-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 5px 20px var(--shadow-color);
+    transition: all 0.4s ease;
+    text-decoration: none;
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+}
+.club-card:hover, .recruitment-card:hover, .gallery-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 28px var(--shadow-hover);
+}
+
+.board-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card-bg);
+    box-shadow: 0 4px 20px var(--shadow-color);
+    border: 1px solid var(--border-color);
+}
+.board-table th, .board-table td { padding: 1.2rem 1.5rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+.board-table th { background-color: #F5E6D3; font-weight: 700; }
+.board-table tbody tr:hover { background-color: var(--body-bg); }
+.board-table .post-title { font-weight: 600; color: var(--text-primary); text-decoration: none; }
+.board-table .post-title:hover { color: var(--primary); }
+
+.pagination { display: flex; justify-content: center; gap: 0.5rem; list-style: none; padding: 0; margin-top: 3rem;}
+.page-item a {
+    display: flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+.page-item a:hover { background: var(--body-bg); color: var(--primary); }
+.page-item.active a { background: var(--primary); color: var(--white); border-color: var(--primary); }

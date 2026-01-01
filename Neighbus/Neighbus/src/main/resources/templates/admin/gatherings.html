@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(pageTitle='모임 관리', activeMenu='gatherings', content=~{:: #gatherings-content})}">
+<body>
+    <div id="gatherings-content">
+        <div class="page-header">
+            <h1>모임 관리</h1>
+            <p>사이트의 모든 모임을 관리합니다.</p>
+        </div>
+
+        <div class="stat-cards-grid">
+            <div class="stat-card">
+                <div class="icon"><i class="fa-solid fa-calendar-days"></i></div>
+                <div class="info"><p class="title">총 모임</p><p class="value" id="total-gatherings">0</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="icon"><i class="fa-solid fa-person-running"></i></div>
+                <div class="info"><p class="title">진행 중</p><p class="value" id="active-gatherings">0</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="icon"><i class="fa-solid fa-flag-checkered"></i></div>
+                <div class="info"><p class="title">종료됨</p><p class="value" id="ended-gatherings">0</p></div>
+            </div>
+        </div>
+
+        <div class="content-panel" style="margin-top: 2rem;">
+            <div class="search-controls">
+                <input type="text" id="search-input" placeholder="모임명으로 검색...">
+                <select id="status-filter">
+                    <option value="">전체 상태</option>
+                    <option value="OPEN">진행중</option> <option value="CLOSED">마감</option> </select>
+            </div>
+            <div class="table-wrapper" style="overflow-x: auto;">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th id="sort-by-id-btn" style="cursor: pointer;">ID <i class="fa-solid fa-sort"></i></th>
+                                            <th>모임명</th>
+                                            <th id="sort-by-clubid-btn" style="cursor: pointer;">동아리 ID <i class="fa-solid fa-sort"></i></th>
+                                            <th>개설자</th>
+                                            <th>참여인원</th>
+                                            <th id="sort-by-meetingdate-btn" style="cursor: pointer;">모임일 <i class="fa-solid fa-sort"></i></th>
+                                            <th>상태</th>
+                                            <th class="actions">관리</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="gathering-table-body">
+                                        <!-- JS로 채워짐 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <nav id="pagination-nav" class="mt-4" aria-label="Page navigation"></nav>
+                        </div>
+                
+                        <script>
+                            let currentPage = 1;
+                            const pageSize = 10;
+                            let currentSortField = 'id'; // Initial sort field (id, clubId, meetingDate)
+                            let sortOrders = {
+                                'id': 'asc',
+                                'clubId': 'asc',
+                                'meetingDate': 'desc' // 모임일은 기본적으로 최신순(내림차순)
+                            };
+
+                            document.addEventListener('DOMContentLoaded', function() {
+                                loadGatherings(currentPage, currentSortField);
+
+                                document.getElementById('search-input').addEventListener('input', () => loadGatherings(1, currentSortField));
+                                document.getElementById('status-filter').addEventListener('change', () => loadGatherings(1, currentSortField));
+
+                                document.getElementById('sort-by-id-btn').addEventListener('click', () => {
+                                    currentSortField = 'id';
+                                    sortOrders['id'] = sortOrders['id'] === 'desc' ? 'asc' : 'desc';
+                                    loadGatherings(1, currentSortField);
+                                });
+
+                                document.getElementById('sort-by-clubid-btn').addEventListener('click', () => {
+                                    currentSortField = 'clubId';
+                                    sortOrders['clubId'] = sortOrders['clubId'] === 'desc' ? 'asc' : 'desc';
+                                    loadGatherings(1, currentSortField);
+                                });
+
+                                document.getElementById('sort-by-meetingdate-btn').addEventListener('click', () => {
+                                    currentSortField = 'meetingDate';
+                                    sortOrders['meetingDate'] = sortOrders['meetingDate'] === 'desc' ? 'asc' : 'desc';
+                                    loadGatherings(1, currentSortField);
+                                });
+                            });
+                
+                            async function loadGatherings(page, sortField) {
+                                try {
+                                    currentPage = page;
+                                    const sortOrder = sortOrders[sortField]; // 해당 필드의 정렬 순서 가져오기
+                                    const keyword = document.getElementById('search-input').value;
+                                    const status = document.getElementById('status-filter').value;
+
+                                    let apiUrl = `/api/admin/gatherings?page=${page}&size=${pageSize}&sortOrder=${sortOrder}&sortField=${sortField}`;
+                                    if (keyword) apiUrl += `&keyword=${keyword}`;
+                                    if (status) apiUrl += `&status=${status}`;
+
+                                    const response = await fetch(apiUrl);
+                                    const result = await response.json();
+                
+                                    if (result.status === 1) {
+                                        const pageData = result.data;
+                                        updateStats(pageData);
+                                        renderTable(pageData.content);
+                                        renderPagination(pageData);
+                                    } else {
+                                        console.error('모임 목록 조회 실패:', result.message);
+                                        document.getElementById('gathering-table-body').innerHTML = '<tr><td colspan="8" class="text-center py-5">데이터를 불러오는 데 실패했습니다.</td></tr>';
+                                    }
+                                } catch (error) {
+                                    console.error('Error loading gatherings:', error);
+                                    document.getElementById('gathering-table-body').innerHTML = '<tr><td colspan="8" class="text-center py-5">서버 통신 중 오류가 발생했습니다.</td></tr>';
+                                }
+                            }
+                
+                            function updateStats(pageData) {
+                                document.getElementById('total-gatherings').textContent = pageData.totalElements;
+                                document.getElementById('active-gatherings').textContent = pageData.activeGatherings;
+                                document.getElementById('ended-gatherings').textContent = pageData.endedGatherings;
+                            }
+                
+                            function formatMeetingDateTime(meetingDate) {
+                                if (!meetingDate) return '-';
+
+                                const date = new Date(meetingDate);
+                                const year = date.getFullYear();
+                                const month = String(date.getMonth() + 1).padStart(2, '0');
+                                const day = String(date.getDate()).padStart(2, '0');
+                                const hours = String(date.getHours()).padStart(2, '0');
+                                const minutes = String(date.getMinutes()).padStart(2, '0');
+
+                                return `
+                                    <div style="line-height: 1.4;">
+                                        <div style="font-weight: 600;">${year}-${month}-${day}</div>
+                                        <div style="font-size: 0.85em; color: #8D6E63; margin-top: 2px;">${hours}:${minutes}</div>
+                                    </div>
+                                `;
+                            }
+
+                            function renderTable(gatherings) {
+                                const tableBody = document.getElementById('gathering-table-body');
+                                tableBody.innerHTML = '';
+                                if (!gatherings || gatherings.length === 0) {
+                                    tableBody.innerHTML = '<tr><td colspan="8" class="text-center py-5">표시할 모임이 없습니다.</td></tr>';
+                                    return;
+                                }
+
+                                gatherings.forEach(gathering => {
+                                    const status = gathering.status === 'CLOSED' ? '마감' : '진행중';
+                                    const statusClass = status === '마감'
+                                        ? 'bg-danger-soft text-danger'
+                                        : 'bg-success-soft text-success';
+
+                                    const creator = gathering.writerName ? `${gathering.writerName} (${gathering.writerUsername})` : 'N/A';
+
+                                    const row = `
+                                        <tr>
+                                            <td>${gathering.id}</td>
+                                            <td><strong>${gathering.title}</strong></td>
+                                            <td>${gathering.clubId}</td>
+                                            <td>${creator}</td>
+                                            <td>${gathering.memberCount} / ${gathering.maxUser}</td>
+                                            <td>${formatMeetingDateTime(gathering.meetingDate)}</td>
+                                            <td><span class="badge ${statusClass}">${status}</span></td>
+                                            <td class="actions">
+                                                <button class="btn btn-secondary btn-icon" onclick="viewDetail(${gathering.id})"><i class="fa-solid fa-eye"></i></button>
+                                                <button class="btn btn-danger btn-icon" onclick="deleteGathering(${gathering.id})"><i class="fa-solid fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    `;
+                                    tableBody.innerHTML += row;
+                                });
+                            }
+
+            function renderPagination(pageData) {
+                const nav = document.getElementById('pagination-nav');
+                nav.innerHTML = '';
+                if (!pageData || pageData.totalPages <= 1) return;
+
+                const ul = document.createElement('ul');
+                ul.className = 'pagination justify-content-center';
+
+                const currentPage = pageData.number;
+                const totalPages = pageData.totalPages;
+                const pageGroupSize = 5; 
+
+                const createPageItem = (content, pageNum, isDisabled = false, isActive = false) => {
+                    const li = document.createElement('li');
+                    li.className = `page-item ${isDisabled ? 'disabled' : ''} ${isActive ? 'active' : ''}`;
+                    const a = document.createElement('a');
+                    a.className = 'page-link';
+                    a.href = '#';
+                    a.innerHTML = content;
+                    if (!isDisabled && pageNum !== currentPage) {
+                        a.onclick = (e) => { e.preventDefault(); loadGatherings(pageNum, currentSortField); };
+                    } else if (isDisabled || pageNum === currentPage) {
+                        a.onclick = (e) => e.preventDefault();
+                    }
+                    li.appendChild(a);
+                    return li;
+                };
+
+                ul.appendChild(createPageItem('<i class="fa-solid fa-chevron-left"></i>', currentPage - 1, currentPage === 1));
+
+                let startPage = Math.max(1, currentPage - Math.floor(pageGroupSize / 2));
+                let endPage = Math.min(totalPages, startPage + pageGroupSize - 1);
+
+                if (endPage - startPage + 1 < pageGroupSize) {
+                    startPage = Math.max(1, endPage - pageGroupSize + 1);
+                }
+
+                if (startPage > 1) {
+                    ul.appendChild(createPageItem(1, 1));
+                    if (startPage > 2) {
+                        ul.appendChild(createPageItem('...', startPage - 1, true));
+                    }
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
+                    ul.appendChild(createPageItem(i, i, false, i === currentPage));
+                }
+
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        ul.appendChild(createPageItem('...', endPage + 1, true));
+                    }
+                    ul.appendChild(createPageItem(totalPages, totalPages));
+                }
+                
+                ul.appendChild(createPageItem('<i class="fa-solid fa-chevron-right"></i>', currentPage + 1, currentPage === totalPages));
+
+                nav.appendChild(ul);
+            }
+
+            function viewDetail(recruitmentId) {
+                window.open('/recruitment/' + recruitmentId, '_blank');
+            }
+
+            async function deleteGathering(recruitmentId) {
+                showModal('confirm', '모임 삭제', '정말로 이 모임을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.', async () => {
+                    try {
+                        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+                        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+                        const headers = { 'Content-Type': 'application/json' };
+                        headers[csrfHeader] = csrfToken;
+
+                        const response = await fetch('/api/admin/gatherings/delete', {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify({ id: recruitmentId })
+                        });
+                        const result = await response.json();
+
+                        if (result.status === 1) {
+                            showModal('success', '삭제 완료', '모임이 삭제되었습니다.', () => {
+                                loadGatherings(currentPage, currentSortField);
+                            });
+                        } else {
+                            showModal('error', '삭제 실패', '삭제 실패: ' + (result.message || '알 수 없는 오류'));
+                        }
+                    } catch (error) {
+                        console.error('Error deleting gathering:', error);
+                        showModal('error', '오류 발생', '모임 삭제 중 오류가 발생했습니다.');
+                    }
+                });
+            }
+        </script>
+    </div>
+</body>
+</html>

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title th:text="|${club.clubName} - 설정|"></title>
+	<meta name="_csrf" th:content="${_csrf.token}" />
+	<meta name="_csrf_header" th:content="${_csrf.headerName}" />
+	<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+	<link rel="stylesheet" href="/css/navibar.css">
+	<link rel="stylesheet" href="/css/bottom-navbar.css">
+	<link rel="stylesheet" href="/css/custom-modal.css">
+	<script src="/js/custom-modal.js"></script>
+
+	<style>
+		/* [디자인 유지] 기존 색상 변수 */
+		:root {
+			--primary: #A67C52;
+			--primary-dark: #8D6E63;
+			--primary-light: #C9A88A;
+			--accent-red: #C87E7E;
+			--accent-red-dark: #B36A6A;
+			--bg-ivory: #FFF8F0;
+			--bg-warm: #FFF5EB;
+			--bg-cream: #FAF0E6;
+			--card-bg: #FFFBF7;
+			--text-primary: #5D4037;
+			--text-secondary: #8D6E63;
+			--text-light: #A1887F;
+			--border-color: #E8D7C3;
+			--shadow-color: rgba(166, 124, 82, 0.1);
+			--white: #FFFFFF;
+		}
+
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+			color: var(--text-primary);
+			background: var(--bg-ivory);
+			line-height: 1.5;
+		}
+
+		.main-wrapper {
+			min-height: 100vh;
+			background: linear-gradient(165deg, var(--bg-ivory) 0%, var(--bg-warm) 50%, var(--bg-cream) 100%);
+			padding: 80px 2rem;
+		}
+
+		.container {
+			max-width: 800px;
+			margin: 0 auto;
+		}
+
+		.page-header {
+			text-align: center;
+			margin-bottom: 3rem;
+		}
+
+		.page-header h1 {
+			font-size: 2.2rem;
+			font-weight: 800;
+			margin-bottom: 0.5rem;
+			color: var(--text-primary);
+		}
+
+		.page-header p {
+			color: var(--text-secondary);
+			font-size: 1.05rem;
+		}
+
+		/* 카드 공통 스타일 */
+		.content-card {
+			background: var(--card-bg);
+			border: 1px solid var(--border-color);
+			box-shadow: 0 5px 20px var(--shadow-color);
+			padding: 2.5rem;
+			border-radius: 20px;
+			margin-bottom: 2rem;
+			transition: transform 0.2s;
+		}
+
+		.card-title {
+			font-size: 1.4rem;
+			font-weight: 700;
+			margin-bottom: 1.5rem;
+			padding-bottom: 1rem;
+			border-bottom: 1px solid var(--border-color);
+			display: flex;
+			align-items: center;
+			gap: 0.8rem;
+			color: var(--text-primary);
+		}
+
+		.card-title i {
+			color: var(--primary);
+		}
+
+		/* 정보 리스트 스타일 */
+		.info-group {
+			margin-bottom: 1.5rem;
+		}
+
+		.info-label {
+			font-size: 0.9rem;
+			font-weight: 600;
+			color: var(--text-light);
+			margin-bottom: 0.5rem;
+			display: block;
+		}
+
+		.info-value {
+			font-size: 1.05rem;
+			color: var(--text-primary);
+			font-weight: 500;
+			padding: 0.8rem 1rem;
+			background: var(--bg-ivory);
+			border-radius: 12px;
+			border: 1px solid transparent;
+		}
+
+		/* 동아리 프리뷰 섹션 */
+		.club-preview {
+			display: flex;
+			align-items: center;
+			gap: 1.5rem;
+			margin-bottom: 2rem;
+			padding: 1rem;
+			background: var(--bg-white);
+			border-radius: 16px;
+		}
+
+		.club-thumb {
+			width: 80px;
+			height: 80px;
+			border-radius: 16px;
+			object-fit: cover;
+			box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+		}
+
+		.club-name-text {
+			font-size: 1.3rem;
+			font-weight: 700;
+			color: var(--text-primary);
+		}
+
+		/* 위험 구역 (탈퇴) 스타일 */
+		.danger-zone {
+			border: 1px solid rgba(200, 126, 126, 0.5);
+			background: #FFF5F5;
+		}
+
+		.danger-zone .card-title {
+			border-bottom-color: rgba(200, 126, 126, 0.3);
+			color: var(--accent-red-dark);
+		}
+
+		.danger-zone .card-title i {
+			color: var(--accent-red);
+		}
+
+		.danger-desc {
+			font-size: 0.95rem;
+			color: var(--accent-red-dark);
+			margin-bottom: 1.5rem;
+			line-height: 1.6;
+		}
+
+		/* 버튼 스타일 */
+		.btn {
+			display: inline-block;
+			padding: 0.8rem 1.5rem;
+			border: none;
+			font-size: 1rem;
+			font-weight: 700;
+			cursor: pointer;
+			text-align: center;
+			text-decoration: none;
+			transition: all 0.3s ease;
+			border-radius: 12px;
+		}
+
+		.btn-danger {
+			background: var(--accent-red);
+			color: var(--white);
+			width: 100%;
+		}
+
+		.btn-danger:hover {
+			background: var(--accent-red-dark);
+			transform: translateY(-2px);
+			box-shadow: 0 4px 12px rgba(200, 126, 126, 0.3);
+		}
+
+		.btn-sm {
+			padding: 0.4rem 0.8rem;
+			font-size: 0.85rem;
+			width: auto;
+			/* 작은 버튼은 꽉 차지 않게 */
+		}
+
+		.btn-back {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.5rem;
+			margin-bottom: 2rem;
+			color: var(--text-secondary);
+			text-decoration: none;
+			font-weight: 600;
+			padding: 0.5rem 0;
+		}
+
+		.btn-back:hover {
+			color: var(--primary);
+			transform: translateX(-3px);
+		}
+
+		/* 테이블 스타일 */
+		.table {
+			--bs-table-bg: transparent;
+			--bs-table-hover-bg: var(--bg-warm);
+		}
+
+		.table th {
+			font-weight: 600;
+			color: var(--text-secondary);
+			font-size: 0.9rem;
+			border-bottom: 2px solid var(--border-color);
+		}
+
+		.table td {
+			vertical-align: middle;
+			color: var(--text-primary);
+			border-bottom: 1px solid var(--border-color);
+		}
+
+		/* [반응형 미디어 쿼리] */
+		@media (max-width: 768px) {
+			.main-wrapper {
+				padding: 40px 1.25rem;
+				/* 모바일 좌우 패딩 축소 */
+			}
+
+			.page-header h1 {
+				font-size: 1.75rem;
+				/* 제목 크기 축소 */
+			}
+
+			.page-header {
+				margin-bottom: 2rem;
+			}
+
+			.content-card {
+				padding: 1.5rem;
+				/* 카드 패딩 축소 */
+				border-radius: 16px;
+			}
+
+			/* 동아리 정보 수직 정렬 */
+			.club-preview {
+				flex-direction: column;
+				text-align: center;
+				gap: 1rem;
+			}
+
+			.club-thumb {
+				width: 100px;
+				height: 100px;
+			}
+
+			.club-name-text {
+				font-size: 1.5rem;
+			}
+
+			/* 버튼 터치 영역 확보 */
+			.btn {
+				padding: 0.9rem 1.5rem;
+			}
+
+			/* 테이블 폰트 조절 */
+			.table th,
+			.table td {
+				font-size: 0.9rem;
+				padding: 0.75rem 0.5rem;
+			}
+		}
+	</style>
+</head>
+
+<body>
+	<div th:replace="~{include/navibar :: header-nav}"></div>
+
+	<div class="main-wrapper">
+		<div class="container">
+			<a th:href="@{/club/{id}(id=${club.id})}" class="btn-back">
+				<i class="fa-solid fa-arrow-left"></i> 동아리 홈으로 돌아가기
+			</a>
+
+			<div class="page-header">
+				<h1>동아리 설정</h1>
+				<p>동아리 정보를 확인하고 나의 활동을 관리합니다.</p>
+			</div>
+
+			<div class="content-card">
+				<h2 class="card-title"><i class="fa-solid fa-circle-info"></i>동아리 기본 정보</h2>
+
+				<div class="club-preview">
+
+					<div>
+						<div class="info-label d-md-block d-none">동아리명</div>
+						<div class="club-name-text" th:text="${club.clubName}">동아리 이름</div>
+					</div>
+				</div>
+
+				<div class="row g-3">
+					<div class="col-md-6 info-group mb-0">
+						<span class="info-label">활동 지역</span>
+						<div class="info-value">
+							<i class="fa-solid fa-location-dot me-2 text-primary opacity-50"></i>
+							<span th:text="|${club.provinceName} ${club.cityName}|">지역 정보</span>
+						</div>
+					</div>
+					<div class="col-md-6 info-group">
+						<span class="info-label">개설일</span>
+						<div class="info-value">
+							<i class="fa-regular fa-calendar me-2 text-primary opacity-50"></i>
+							<span th:text="${#temporals.format(club.createdAt, 'yyyy-MM-dd')}">2025-01-01</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="info-group">
+					<span class="info-label">소개글</span>
+					<div class="info-value" style="min-height: 100px; line-height: 1.6;">
+						<span th:text="${club.clubInfo}">동아리 소개글 내용입니다.</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="content-card" th:if="${isMember}">
+				<h2 class="card-title"><i class="fa-solid fa-user-tag"></i>나의 활동 정보</h2>
+				<div class="row">
+					<div class="col-md-6 info-group mb-0">
+						<span class="info-label">나의 역할</span>
+						<div class="info-value">
+							<span th:if="${isMaster}" class="text-primary fw-bold"><i
+									class="fa-solid fa-crown me-2"></i>동아리 관리자</span>
+							<span th:unless="${isMaster}"><i class="fa-solid fa-user me-2"></i>일반회원</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="content-card" th:if="${isMaster}">
+				<h2 class="card-title"><i class="fa-solid fa-users"></i>회원 관리</h2>
+				<div class="table-responsive">
+					<table class="table table-hover text-nowrap mb-0">
+						<thead>
+							<tr>
+								<th style="width: 10%;">ID</th>
+								<th>아이디</th>
+								<th>닉네임</th>
+								<th class="text-end">관리</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:each="member : ${clubMembers}">
+								<td th:text="${member.userId}">1</td>
+								<td th:text="${member.username}">user123</td>
+								<td th:text="${member.nickname}">닉네임1</td>
+								<td class="text-end">
+									<button type="button" class="btn btn-sm btn-danger"
+										th:if="${member.userId != #authentication.principal.id}"
+										th:onclick="removeClubMember([[${club.id}]], [[${member.userId}]], [[${member.nickname}]]);">
+										추방
+									</button>
+									<span th:if="${member.userId == #authentication.principal.id}"
+										class="badge bg-secondary opacity-50">나</span>
+								</td>
+							</tr>
+							<tr th:if="${#lists.isEmpty(clubMembers)}">
+								<td colspan="4" class="text-center py-4 text-muted">현재 가입된 회원이 없습니다.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<div class="content-card danger-zone" th:if="${isMember}">
+				<h2 class="card-title"><i class="fa-solid fa-triangle-exclamation"></i>Danger Zone</h2>
+
+				<div th:if="${!isMaster}">
+					<p class="danger-desc">
+						동아리를 탈퇴하면 작성한 게시물 및 활동 내역은 유지되지만, 회원 권한은 즉시 소멸됩니다.<br class="d-none d-md-block">
+						재가입 시 승인 절차가 필요할 수 있습니다.
+					</p>
+					<form th:action="@{/club/withdraw/{clubId}(clubId=${club.id})}" method="post"
+						onsubmit="return handleWithdraw(event);">
+						<button type="submit" class="btn btn-danger">
+							<i class="fa-solid fa-arrow-right-from-bracket me-2"></i>동아리 탈퇴하기
+						</button>
+					</form>
+				</div>
+
+				<div th:if="${isMaster}">
+					<p class="danger-desc">
+						동아리를 폐쇄하면 동아리와 관련된 모든 정보(게시물, 모임, 회원 목록 등)가 영구적으로 삭제됩니다.<br class="d-none d-md-block">
+						이 작업은 되돌릴 수 없으니 신중하게 결정해주세요.
+					</p>
+					<form th:action="@{/club/closeClub/{clubId}(clubId=${club.id})}" method="post"
+						onsubmit="return handleCloseClub(event);">
+						<button type="submit" class="btn btn-danger">
+							<i class="fa-solid fa-power-off me-2"></i>동아리 폐쇄하기
+						</button>
+					</form>
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+	<script th:inline="javascript">
+		// CSRF 토큰 설정
+		const csrfToken = /*[[${_csrf.token}]]*/ '';
+		const csrfHeader = /*[[${_csrf.headerName}]]*/ '';
+
+		async function handleWithdraw(event) {
+			event.preventDefault();
+
+			showModal('confirm', '동아리 탈퇴', '정말 이 동아리를 탈퇴하시겠습니까?\n이 작업은 되돌릴 수 없습니다.', async () => {
+				const form = event.target;
+
+				try {
+					const headers = {'Content-Type': 'application/x-www-form-urlencoded'};
+					headers[csrfHeader] = csrfToken;
+
+					const response = await fetch(form.action, {
+						method: 'POST',
+						headers: headers,
+						body: new URLSearchParams(new FormData(form)).toString()
+					});
+
+					if (response.ok) {
+						showModal('success', '탈퇴 완료', '정상적으로 탈퇴되었습니다.', () => {
+							window.location.href = '/club';
+						});
+					} else {
+						const errorText = await response.text();
+						console.error('Withdraw failed:', errorText);
+						showModal('error', '탈퇴 실패', '탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해주세요.');
+					}
+				} catch (error) {
+					console.error('Error:', error);
+					showModal('error', '서버 오류', '서버 통신 중 오류가 발생했습니다.');
+				}
+			});
+			return false;
+		}
+
+		async function handleCloseClub(event) {
+			event.preventDefault();
+
+			showModal('confirm', '동아리 폐쇄', '정말 이 동아리를 폐쇄하시겠습니까?\n모든 관련 정보가 삭제되며, 이 작업은 되돌릴 수 없습니다.', async () => {
+				const form = event.target;
+				try {
+					const headers = {};
+					headers[csrfHeader] = csrfToken;
+
+					const response = await fetch(form.action, {
+						method: 'POST',
+						headers: headers
+					});
+
+					if (response.ok) {
+						showModal('success', '폐쇄 완료', '동아리가 성공적으로 폐쇄되었습니다.', () => {
+							window.location.href = '/club';
+						});
+					} else {
+						const errorText = await response.text();
+						console.error('Club closure failed:', errorText);
+						showModal('error', '폐쇄 실패', '동아리 폐쇄에 실패했습니다. 권한이 없거나 서버 오류가 발생했습니다.');
+					}
+				} catch (error) {
+					console.error('Error during club closure:', error);
+					showModal('error', '서버 오류', '서버 통신 중 오류가 발생했습니다.');
+				}
+			});
+			return false;
+		}
+
+		async function removeClubMember(clubId, userId, nickname) {
+			showModal('confirm', '회원 추방', `'${nickname}' 회원을 동아리에서 추방하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`, async () => {
+				try {
+					const headers = {'Content-Type': 'application/x-www-form-urlencoded'};
+					headers[csrfHeader] = csrfToken;
+
+					const response = await fetch('/club/members/remove', {
+						method: 'POST',
+						headers: headers,
+						body: `clubId=${clubId}&userId=${userId}`
+					});
+
+					const result = await response.json();
+
+					if (result.status === 'success') {
+						showModal('success', '처리 완료', result.message, () => {
+							location.reload();
+						});
+					} else {
+						showModal('error', '처리 실패', '회원 추방 처리 실패: ' + result.message);
+					}
+				} catch (error) {
+					console.error('Error removing member:', error);
+					showModal('error', '서버 오류', '서버 통신 중 오류가 발생했습니다.');
+				}
+			});
+		}
+	</script>
+	<div th:replace="~{include/bottom-navbar :: bottom-nav}"></div>
+</body>
+
+</html>

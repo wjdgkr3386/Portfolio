@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(pageTitle='대시보드', activeMenu='dashboard', content=~{:: #dashboard-content})}">
+
+<body>
+    <div id="dashboard-content">
+        <div class="page-header">
+            <h1>대시보드</h1>
+            <p>사이트의 주요 현황을 한눈에 확인하세요.</p>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="stat-cards-grid">
+            <div class="stat-card">
+                <div class="icon-wrapper"><i class="fa-solid fa-users"></i></div>
+                <div class="info">
+                    <p class="title">총 회원 수</p>
+                    <p class="value" id="total-users">...</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="icon-wrapper"><i class="fa-solid fa-user-plus"></i></div>
+                <div class="info">
+                    <p class="title">오늘 가입자</p>
+                    <p class="value" id="today-signups">...</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="icon-wrapper"><i class="fa-solid fa-file-lines"></i></div>
+                <div class="info">
+                    <p class="title">총 게시글</p>
+                    <p class="value" id="total-posts">...</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="icon-wrapper"><i class="fa-solid fa-circle-question"></i></div>
+                <div class="info">
+                    <p class="title">처리 대기 문의</p>
+                    <p class="value" id="pending-inquiries">...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="dashboard-grid">
+            <div class="content-panel chart-card">
+                <div class="chart-header">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <h3>월별 가입자 수 (최근 6개월)</h3>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="monthlySignupsChart"></canvas>
+                </div>
+            </div>
+            <div class="content-panel chart-card">
+                <div class="chart-header">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <h3>카테고리별 동아리 수 (상위 7개)</h3>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            :root {
+                --dash-bg-color: #FAF6F1;
+                --dash-card-bg: #FFFBF7;
+                --dash-text-primary: #5D4037;
+                --dash-text-secondary: #8D6E63;
+                --dash-border-color: #E8D7C3;
+                --dash-shadow: 0 2px 8px rgba(166, 124, 82, 0.08);
+
+                --chart-color-1: #A67C52;
+                --chart-color-2: #81A1C1;
+                --chart-color-3: #A3BE8C;
+                --chart-color-4: #EBCB8B;
+                --chart-color-5: #BF616A;
+                --chart-color-6: #B48EAD;
+                --chart-color-7: #C9A88A;
+                --chart-color-8: #8D6E63;
+            }
+            #dashboard-content {
+                background-color: var(--dash-bg-color);
+                padding: 2rem;
+                margin: -2rem;
+            }
+            .stat-cards-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 1.5rem;
+            }
+            .stat-card {
+                background-color: var(--dash-card-bg);
+                border-radius: 0.75rem;
+                padding: 1.5rem;
+                display: flex;
+                align-items: center;
+                gap: 1.5rem;
+                border: 1px solid var(--dash-border-color);
+                box-shadow: var(--dash-shadow);
+                transition: transform 0.2s, box-shadow 0.2s;
+            }
+            .stat-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+            }
+            .stat-card .icon-wrapper {
+                width: 3.5rem;
+                height: 3.5rem;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.5rem;
+            }
+            .stat-card:nth-child(1) .icon-wrapper { background-color: #E8D7C3; color: #A67C52; }
+            .stat-card:nth-child(2) .icon-wrapper { background-color: #D5E4F1; color: #81A1C1; }
+            .stat-card:nth-child(3) .icon-wrapper { background-color: #E3F0D9; color: #A3BE8C; }
+            .stat-card:nth-child(4) .icon-wrapper { background-color: #F4D7D9; color: #BF616A; }
+
+            .stat-card .info .title {
+                font-size: 0.9rem;
+                font-weight: 500;
+                color: var(--dash-text-secondary);
+                margin: 0 0 0.25rem 0;
+            }
+            .stat-card .info .value {
+                font-size: 2rem;
+                font-weight: 700;
+                color: var(--dash-text-primary);
+                margin: 0;
+            }
+            .dashboard-grid {
+                margin-top: 2rem;
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            .chart-card {
+                background-color: var(--dash-card-bg);
+                border-radius: 0.75rem;
+                padding: 1.5rem 2rem;
+                border: 1px solid var(--dash-border-color);
+                box-shadow: var(--dash-shadow);
+                transition: transform 0.2s, box-shadow 0.2s;
+            }
+            .chart-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 8px 16px rgba(166, 124, 82, 0.12);
+            }
+            .chart-header {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                margin-bottom: 1.5rem;
+            }
+            .chart-header i {
+                font-size: 1.5rem;
+                color: var(--chart-color-1);
+                background: linear-gradient(135deg, rgba(166, 124, 82, 0.1), rgba(166, 124, 82, 0.15));
+                width: 2.5rem;
+                height: 2.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 0.5rem;
+            }
+            .chart-card:nth-child(2) .chart-header i {
+                color: var(--chart-color-2);
+                background: linear-gradient(135deg, rgba(129, 161, 193, 0.1), rgba(129, 161, 193, 0.15));
+            }
+            .chart-card h3 {
+                margin: 0;
+                font-size: 1.125rem;
+                font-weight: 600;
+                color: var(--dash-text-primary);
+            }
+            .chart-wrapper {
+                position: relative;
+                height: 400px;
+                width: 100%;
+            }
+            @media (min-width: 1200px) {
+                .dashboard-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+        </style>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', async function() {
+                Chart.defaults.font.family = "'Pretendard', sans-serif";
+                Chart.defaults.color = 'var(--dash-text-secondary)';
+
+                try {
+                    // Fetch all data in parallel
+                    const [statsRes, monthlySignupsRes, gatheringsByCategoryRes] = await Promise.all([
+                        fetch('/api/admin/dashboard/stats'),
+                        fetch('/api/admin/dashboard/monthly-signups'),
+                        fetch('/api/admin/dashboard/gatherings-by-category')
+                    ]);
+
+                    const statsResult = await statsRes.json();
+                    const monthlySignupsResult = await monthlySignupsRes.json();
+                    const gatheringsByCategoryResult = await gatheringsByCategoryRes.json();
+
+                    // 디버깅: API 응답 확인
+                    console.log('카테고리별 동아리 수 API 응답:', gatheringsByCategoryResult);
+
+                    // Update stat cards
+                    if (statsResult.status === 1) {
+                        const stats = statsResult.data;
+                        document.getElementById('total-users').textContent = (stats.totalUsers || 0).toLocaleString();
+                        document.getElementById('today-signups').textContent = (stats.todaySignups || 0).toLocaleString();
+                        document.getElementById('total-posts').textContent = (stats.totalPosts || 0).toLocaleString();
+                        document.getElementById('pending-inquiries').textContent = (stats.pendingInquiries || 0).toLocaleString();
+                    }
+
+                    // Render charts
+                    if (monthlySignupsResult.status === 1) {
+                        renderMonthlySignupsChart(monthlySignupsResult.data);
+                    }
+                    if (gatheringsByCategoryResult.status === 1 && gatheringsByCategoryResult.data && gatheringsByCategoryResult.data.length > 0) {
+                        console.log('차트 렌더링 시작:', gatheringsByCategoryResult.data);
+                        renderCategoryChart(gatheringsByCategoryResult.data);
+                    } else {
+                        console.warn('카테고리 데이터 없음 또는 오류:', gatheringsByCategoryResult);
+                        document.getElementById('categoryChart').parentElement.innerHTML = '<p style="text-align:center; padding:2rem; color:#8D6E63;">데이터가 없습니다</p>';
+                    }
+
+                } catch (error) {
+                    console.error("대시보드 데이터 로딩 실패:", error);
+                    document.getElementById('total-users').textContent = '오류';
+                    document.getElementById('today-signups').textContent = '오류';
+                    document.getElementById('total-posts').textContent = '오류';
+                    document.getElementById('pending-inquiries').textContent = '오류';
+                }
+            });
+
+            function renderMonthlySignupsChart(data) {
+                const ctx = document.getElementById('monthlySignupsChart')?.getContext('2d');
+                if (!ctx) return;
+
+                // Generate last 6 months
+                const labels = [];
+                const now = new Date();
+                for (let i = 5; i >= 0; i--) {
+                    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                    const monthStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+                    labels.push(monthStr);
+                }
+
+                // Fill counts with data or 0
+                const dataMap = {};
+                if (data && data.length > 0) {
+                    data.forEach(d => {
+                        dataMap[d.month] = d.count;
+                    });
+                }
+                const counts = labels.map(label => dataMap[label] || 0);
+
+                // Create gradient
+                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                gradient.addColorStop(0, 'rgba(166, 124, 82, 0.85)');
+                gradient.addColorStop(1, 'rgba(201, 168, 138, 0.4)');
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '가입자 수',
+                            data: counts,
+                            backgroundColor: gradient,
+                            borderColor: '#A67C52',
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            borderSkipped: false,
+                            maxBarThickness: 80,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        layout: {
+                            padding: {
+                                left: 10,
+                                right: 10,
+                                top: 10,
+                                bottom: 10
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(166, 124, 82, 0.08)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    font: { size: 13 },
+                                    padding: 10,
+                                    color: '#8D6E63',
+                                    precision: 0
+                                }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: {
+                                    font: { size: 13 },
+                                    padding: 10,
+                                    color: '#8D6E63',
+                                    maxRotation: 0,
+                                    minRotation: 0
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#5D4037',
+                                padding: 12,
+                                titleFont: { size: 14, weight: 'bold' },
+                                bodyFont: { size: 13 },
+                                cornerRadius: 8,
+                                displayColors: false,
+                                titleColor: '#FFFBF7',
+                                bodyColor: '#FFFBF7',
+                                callbacks: {
+                                    label: function(context) {
+                                        return '가입자 수: ' + context.parsed.y + '명';
+                                    }
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: 1500,
+                            easing: 'easeInOutQuart'
+                        }
+                    }
+                });
+            }
+
+            function renderCategoryChart(data) {
+                const ctx = document.getElementById('categoryChart')?.getContext('2d');
+                if (!ctx || !data) return;
+
+                const labels = data.map(d => d.categoryName);
+                const counts = data.map(d => d.clubCount || d.gatheringCount);
+                const chartColors = [
+                    '#A67C52', '#81A1C1', '#A3BE8C', '#EBCB8B',
+                    '#BF616A', '#B48EAD', '#C9A88A', '#8D6E63'
+                ];
+
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '동아리 수',
+                            data: counts,
+                            backgroundColor: chartColors,
+                            borderColor: '#FFFBF7',
+                            borderWidth: 3,
+                            hoverOffset: 15,
+                            hoverBorderWidth: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '65%',
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    padding: 15,
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                    font: { size: 13 },
+                                    generateLabels: function(chart) {
+                                        const data = chart.data;
+                                        if (data.labels.length && data.datasets.length) {
+                                            return data.labels.map((label, i) => {
+                                                const value = data.datasets[0].data[i];
+                                                return {
+                                                    text: `${label}: ${value}개`,
+                                                    fillStyle: data.datasets[0].backgroundColor[i],
+                                                    hidden: false,
+                                                    index: i
+                                                };
+                                            });
+                                        }
+                                        return [];
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: '#5D4037',
+                                padding: 12,
+                                titleFont: { size: 14, weight: 'bold' },
+                                bodyFont: { size: 13 },
+                                cornerRadius: 8,
+                                titleColor: '#FFFBF7',
+                                bodyColor: '#FFFBF7',
+                                callbacks: {
+                                    label: function(context) {
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const value = context.parsed;
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        return ` ${context.label}: ${value}개 (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        },
+                        animation: {
+                            animateRotate: true,
+                            animateScale: true,
+                            duration: 1500,
+                            easing: 'easeInOutQuart'
+                        }
+                    }
+                });
+            }
+        </script>
+    </div>
+</body>
+</html>

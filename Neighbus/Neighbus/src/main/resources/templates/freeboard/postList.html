@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${'자유게시판 - 동네친구'}">자유게시판 - 동네친구</title>
+    
+    <link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/css/navibar.css">
+    <link rel="stylesheet" href="/css/bottom-navbar.css">
+
+    <style>
+        :root {
+            --primary: #A67C52;
+            --primary-dark: #8D6E63;
+            --primary-light: #F2E8DF;
+            --bg-ivory: #FFF8F0;
+            --bg-warm: #FFF5EB;
+            --bg-cream: #FAF0E6;
+            --card-bg: #FFFFFF;
+            --text-primary: #5D4037;
+            --text-secondary: #8D6E63;
+            --text-light: #A1887F;
+            --border-color: #E8D7C3;
+            --shadow-color: rgba(166, 124, 82, 0.1);
+            --white: #FFFFFF;
+        }
+
+        body {
+            font-family: 'SUIT', sans-serif;
+            color: var(--text-primary);
+            background: linear-gradient(165deg, var(--bg-ivory) 0%, var(--bg-warm) 50%, var(--bg-cream) 100%);
+            margin: 0;
+            padding-top: 80px;
+            padding-bottom: 80px;
+            min-height: 100vh;
+        }
+
+        .main-wrapper {
+            padding-top: 2rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-header { text-align: center; margin-bottom: 3rem; }
+        .page-title { font-size: 2.8rem; font-weight: 800; margin-bottom: 0.75rem; color: var(--text-primary); }
+        .page-subtitle { color: var(--text-secondary); font-size: 1.15rem; }
+
+        /* New Filter Design */
+        .filter-controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 3rem;
+        }
+        .custom-filter-element {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            height: 50px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+        .custom-filter-element:focus, .custom-filter-element:hover {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(166, 124, 82, 0.1), 0 4px 15px var(--shadow-color);
+        }
+        .search-group {
+            flex-grow: 1;
+            max-width: 500px;
+        }
+        .search-group .form-control {
+            border-right: none;
+        }
+        .search-group .btn-search-icon {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-left: none;
+            color: var(--primary);
+            font-size: 1.2rem;
+            padding: 0 1.2rem;
+            border-radius: 0 12px 12px 0;
+        }
+
+        /* 테이블 스타일 (PC) */
+        .board-table {
+            width: 100%;
+            background: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            border: none;
+        }
+        .board-table th {
+            background: var(--bg-cream);
+            padding: 1.2rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .board-table td { padding: 1.2rem; border-bottom: 1px solid var(--bg-warm); }
+        .board-table tbody tr { cursor: pointer; transition: all 0.2s ease; }
+        .board-table tbody tr:hover { transform: translateY(-2px); box-shadow: 0 4px 12px var(--shadow-color); }
+
+        .club-badge {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-right: 8px;
+        }
+
+        .post-title-link {
+            text-decoration: none;
+            color: var(--text-primary);
+            font-weight: 600;
+            transition: 0.2s;
+            pointer-events: none;
+        }
+
+        .btn-write-fab {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-size: 1.8rem;
+            z-index: 1040;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        .btn-write-fab:hover {
+            background: var(--primary-dark);
+            transform: scale(1.05);
+        }
+
+        /* Tablet & iPad 반응형 */
+        @media (max-width: 991px) {
+            body {
+                padding-top: 70px;
+                padding-bottom: calc(80px + env(safe-area-inset-bottom));
+            }
+
+            .main-wrapper {
+                padding: 40px 20px 30px;
+            }
+
+            .page-header {
+                margin-bottom: 2.5rem;
+            }
+
+            .page-title {
+                font-size: 2.2rem;
+            }
+
+            .page-subtitle {
+                font-size: 1rem;
+            }
+
+            .filter-controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+
+            .filter-controls > div {
+                width: 100%;
+                max-width: none;
+            }
+
+            .search-group {
+                max-width: none;
+            }
+
+            .btn-write-fab {
+                bottom: calc(90px + env(safe-area-inset-bottom));
+            }
+        }
+
+        /* Mobile 반응형 */
+        @media (max-width: 768px) {
+            body {
+                padding-top: 60px;
+                padding-bottom: calc(90px + env(safe-area-inset-bottom));
+            }
+
+            .main-wrapper {
+                padding: 30px 15px 20px;
+            }
+
+            .page-header {
+                margin-bottom: 2rem;
+            }
+
+            .page-title {
+                font-size: 1.8rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .page-subtitle {
+                font-size: 0.9rem;
+            }
+
+            .filter-controls {
+                margin-bottom: 2rem;
+                gap: 0.6rem;
+            }
+
+            .custom-filter-element {
+                height: 45px;
+                font-size: 0.9rem;
+            }
+
+            .board-table thead { display: none; }
+            .board-table, .board-table tbody, .board-table tr, .board-table td { display: block; }
+
+            .board-table { background: transparent; box-shadow: none; }
+            .board-table tr {
+                background: white;
+                margin-bottom: 12px;
+                padding: 16px;
+                border-radius: 14px;
+                box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+                border: 1px solid var(--border-color);
+                cursor: pointer;
+            }
+            .board-table tbody tr:hover {
+                transform: none;
+                box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+            }
+            .board-table td { padding: 0; border: none; }
+
+            .board-table td:nth-child(1) { display: none; }
+
+            .post-title-link {
+                font-size: 1.05rem;
+                display: block;
+                margin-bottom: 10px;
+                line-height: 1.4;
+            }
+
+            .club-badge {
+                font-size: 0.75rem;
+                padding: 2px 8px;
+                margin-bottom: 5px;
+                display: inline-block;
+            }
+
+            .mobile-meta {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: 0.85rem;
+                color: var(--text-light);
+            }
+            .mobile-meta .writer { color: var(--text-secondary); font-weight: 600; }
+
+            .mobile-views {
+                margin-left: auto;
+                font-size: 0.8rem;
+            }
+
+            .btn-write-fab {
+                width: 56px;
+                height: 56px;
+                font-size: 1.6rem;
+                bottom: calc(90px + env(safe-area-inset-bottom));
+                right: 15px;
+            }
+        }
+
+        .pagination { gap: 0.5rem; }
+        .pagination .page-item {
+            margin: 0;
+        }
+        .pagination .page-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            background-color: transparent;
+            color: var(--text-secondary);
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .pagination .page-link:hover {
+            background-color: var(--bg-cream);
+            color: var(--primary);
+        }
+        .page-item.active .page-link {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px var(--shadow-color);
+        }
+        .page-item.disabled .page-link {
+            color: var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <div th:replace="~{include/navibar :: header-nav}"></div>
+
+    <div class="main-wrapper">
+        <div class="container">
+            <div class="page-header">
+                <h1 class="page-title">자유게시판</h1>
+                <p class="page-subtitle">우리 동네의 따뜻한 소식을 나눠보세요</p>
+            </div>
+
+            <a th:href="@{/freeboard/write}" class="btn-write-fab">
+                <i class="bi bi-pencil-fill"></i>
+            </a>
+
+            <form th:action="@{/freeboard/list}" method="get" id="filterForm" class="mb-4">
+                <div class="filter-controls">
+                    <div style="min-width: 200px;">
+                        <select id="clubSelect" name="clubId" class="form-select custom-filter-element" onChange="this.form.submit()">
+                            <option value="0">전체 동아리</option>
+                            <th:block th:each="myClub : ${myClubList}">
+                                <option th:value="${myClub.id}" th:text="${myClub.clubName}" th:selected="${myClub.id == freeboardDTO.clubId}"></option>
+                            </th:block>
+                        </select>
+                    </div>
+                    <div class="input-group search-group">
+                        <input type="text" id="keywordInput" name="keyword" th:value="${keyword}" placeholder="제목, 작성자 검색" class="form-control custom-filter-element">
+                        <button type="submit" class="btn btn-search-icon"><i class="bi bi-search"></i></button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="board-table-section">
+                <table class="board-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 8%; text-align: center;">No</th>
+                            <th style="width: 50%;">제목</th>
+                            <th style="width: 15%;">작성자</th>
+                            <th style="width: 15%;">날짜</th>
+                            <th style="width: 12%; text-align: center;">조회</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="post, i : ${posts}" th:attr="data-post-id=${post.id}" onclick="goToDetail(this)">
+                            <td style="text-align: center;" class="d-none d-md-table-cell">
+                                <span th:text="${pagingMap != null ? (pagingMap.selectPageNo - 1) * pagingMap.rowCnt + i.index + 1 : i.index + 1}">1</span>
+                            </td>
+                            <td>
+                                <div class="post-title-link">
+                                    <span class="club-badge" th:text="${post.clubName}">동아리</span>
+                                    <span th:text="${post.title}">게시글 제목</span>
+                                </div>
+                                <div class="mobile-meta d-md-none">
+                                    <span class="writer" th:text="${post.writerNickname}">작성자</span>
+                                    <span>•</span>
+                                    <span th:text="${#temporals.format(post.createdAt, 'MM.dd')}">11.04</span>
+                                    <span class="mobile-views"><i class="bi bi-eye"></i> [[${post.viewCount}]]</span>
+                                </div>
+                            </td>
+                            <td class="d-none d-md-table-cell" th:text="${post.writerNickname}">작성자</td>
+                            <td class="d-none d-md-table-cell" th:text="${#temporals.format(post.createdAt, 'yyyy.MM.dd')}">2025.11.04</td>
+                            <td class="d-none d-md-table-cell" style="text-align: center;" th:text="${post.viewCount}">123</td>
+                        </tr>
+                        <tr th:if="${posts.isEmpty()}">
+                            <td colspan="5" class="text-center py-5 text-muted">등록된 게시글이 없습니다.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <nav th:if="${pagingMap != null && pagingMap.searchCnt > 0}" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item" th:classappend="${pagingMap.selectPageNo == 1} ? 'disabled'">
+                            <a class="page-link" th:href="@{/freeboard/list(selectPageNo=${pagingMap.selectPageNo - 1}, keyword=${keyword}, clubId=${freeboardDTO.clubId})}"><i class="bi bi-chevron-left"></i></a>
+                        </li>
+                        <li class="page-item" th:each="page : ${#numbers.sequence(pagingMap.beginPageNo, pagingMap.endPageNo)}" th:classappend="${page == pagingMap.selectPageNo} ? 'active'">
+                            <a class="page-link" th:href="@{/freeboard/list(selectPageNo=${page}, keyword=${keyword}, clubId=${freeboardDTO.clubId})}" th:text="${page}">1</a>
+                        </li>
+                        <li class="page-item" th:classappend="${pagingMap.selectPageNo == pagingMap.endPageNo} ? 'disabled'">
+                            <a class="page-link" th:href="@{/freeboard/list(selectPageNo=${pagingMap.selectPageNo + 1}, keyword=${keyword}, clubId=${freeboardDTO.clubId})}"><i class="bi bi-chevron-right"></i></a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goToDetail(row) {
+            const postId = row.getAttribute('data-post-id');
+            if (postId) {
+                location.href = '/freeboard/' + postId;
+            }
+        }
+
+        function search(e) {
+            // This function is now implicitly handled by the form submission
+        }
+    </script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <div th:replace="~{include/bottom-navbar :: bottom-nav}"></div>
+</body>
+</html>

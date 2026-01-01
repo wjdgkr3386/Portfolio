@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spring AI Chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* 베이지 & 웜 브라운 컬러 팔레트 */
+        :root {
+            /* 메인 포인트: 부드러운 브라운 (라떼 색상) */
+            --main-color: #8d6e63; 
+            /* 호버 시: 조금 더 진한 브라운 (커피 색상) */
+            --main-color-hover: #6d4c41; 
+            /* 배경색: 아주 연한 크림 베이지 (메인 페이지 베이지와 자연스럽게 연결) */
+            --bg-color: #fdfbf7; 
+            /* 텍스트 색상: 완전 검정보다는 진한 고동색이 베이지와 잘 어울림 */
+            --text-dark: #4e342e;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+        }
+
+        /* 커스텀 테마 클래스 */
+        .bg-theme {
+            background-color: var(--main-color) !important;
+        }
+        
+        .btn-theme {
+            background-color: var(--main-color);
+            color: white;
+            border: none;
+        }
+
+        .btn-theme:hover {
+            background-color: var(--main-color-hover);
+            color: white;
+        }
+        
+        /* 쉐도우도 약간 따뜻한 색으로 변경 */
+        .shadow-warm {
+            box-shadow: 0 10px 30px rgba(141, 110, 99, 0.15) !important;
+        }
+
+        /* 스크롤바 커스텀 */
+        #chatBox::-webkit-scrollbar {
+            width: 6px;
+        }
+        #chatBox::-webkit-scrollbar-thumb {
+            background-color: #d7ccc8; /* 연한 브라운 */
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="d-flex justify-content-center align-items-center min-vh-100 p-3">
+
+    <div class="card shadow-warm border-0 rounded-4 w-100" style="max-width: 800px; height: 600px; display: flex; flex-direction: column;">
+        
+        <div class="card-header bg-theme text-white text-center p-4 border-0" style="border-radius: 20px 20px 0 0;">
+            <h1 class="h5 fw-bold m-0">🤖 Chat Assistant</h1>
+        </div>
+
+        <div id="chatBox" class="card-body bg-white overflow-auto p-4" style="flex: 1;">
+            <div class="d-flex justify-content-start mb-3">
+                <div class="p-3 rounded-4 bg-light border" style="max-width: 75%; color: var(--text-dark);">
+                    안녕하세요! 따뜻한 하루 보내세요.
+                    무엇을 도와드릴까요?
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer bg-white p-4 border-top-0" style="border-radius: 0 0 20px 20px;">
+            <div class="input-group">
+                <input type="text" id="messageInput" class="form-control rounded-pill border-0 me-2 px-3 py-3" 
+                       placeholder="메시지를 입력하세요..." 
+                       style="font-size: 15px; background-color: #f5f5f5;">
+                <button id="sendButton" class="btn btn-theme rounded-pill fw-bold px-4" type="button">전송</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chatBox');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+
+        let currentAssistantMessage = null;
+
+        // 사용자 메시지 추가
+        function addUserMessage(message) {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.className = 'd-flex justify-content-end mb-3 animation-fade-in';
+            
+            // 사용자 말풍선: 테마 브라운 컬러
+            const bubble = document.createElement('div');
+            bubble.className = 'p-3 rounded-4 text-white bg-theme shadow-sm';
+            bubble.style.maxWidth = '75%';
+            bubble.style.wordWrap = 'break-word';
+            bubble.style.borderBottomRightRadius = '4px'; 
+            bubble.textContent = message;
+
+            messageWrapper.appendChild(bubble);
+            chatBox.appendChild(messageWrapper);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Assistant 메시지 공간 생성
+        function createAssistantMessage() {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.className = 'd-flex justify-content-start mb-3 animation-fade-in';
+
+            // 봇 말풍선: 깔끔한 화이트/연회색
+            const bubble = document.createElement('div');
+            bubble.className = 'message-content p-3 rounded-4 bg-light border shadow-sm';
+            bubble.style.maxWidth = '75%';
+            bubble.style.wordWrap = 'break-word';
+            bubble.style.borderBottomLeftRadius = '4px'; 
+            bubble.style.color = '#4e342e'; // 텍스트 색상 지정
+
+            messageWrapper.appendChild(bubble);
+            chatBox.appendChild(messageWrapper);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            return bubble;
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            addUserMessage(message);
+            messageInput.value = '';
+            sendButton.disabled = true;
+            sendButton.style.opacity = '0.7';
+
+            currentAssistantMessage = createAssistantMessage();
+
+            try {
+                const response = await fetch(`/chatbot/api/chat/stream?message=${encodeURIComponent(message)}`);
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let content = "";
+
+                while (true) {
+                    const {done, value} = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value);
+                    content += chunk;
+                    currentAssistantMessage.textContent = content;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            } catch (error) {
+                currentAssistantMessage.textContent = '오류가 발생했습니다. 다시 시도해주세요.';
+                console.error('Error:', error);
+            }
+            
+            sendButton.disabled = false;
+            sendButton.style.opacity = '1';
+            currentAssistantMessage = null;
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // 애니메이션 효과
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .animation-fade-in {
+                animation: fadeIn 0.3s ease-out;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+<div th:replace="~{include/bottom-navbar :: bottom-nav}"></div>
+</body>
+</html>

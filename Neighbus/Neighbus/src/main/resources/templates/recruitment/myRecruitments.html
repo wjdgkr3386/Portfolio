@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나의 모임 - NEIGHBUS</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/navibar.css">
+    <link rel="stylesheet" href="/css/bottom-navbar.css">
+
+    <style>
+        :root {
+            --primary: #A67C52;
+            --primary-dark: #8D6E63;
+            --bg-ivory: #FFF8F0;
+            --bg-warm: #FFF5EB;
+            --bg-cream: #FAF0E6;
+            --card-bg: #FFFBF7;
+            --text-primary: #5D4037;
+            --text-secondary: #8D6E63;
+            --text-light: #A1887F;
+            --border-color: #E8D7C3;
+            --shadow-color: rgba(166, 124, 82, 0.1);
+            --shadow-hover: rgba(166, 124, 82, 0.2);
+            --white: #FFFFFF;
+        }
+
+        body {
+            font-family: 'SUIT', sans-serif;
+            background: linear-gradient(165deg, var(--bg-ivory) 0%, var(--bg-warm) 50%, var(--bg-cream) 100%);
+            color: var(--text-main);
+            padding-top: 100px; 
+            min-height: 100vh;
+        }
+
+        a { text-decoration: none; color: inherit; }
+
+        .custom-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .page-title {
+            font-size: 3rem;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .page-subtitle {
+            font-size: 1.1rem;
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+        }
+
+        .recruitment-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .recruitment-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+        }
+
+        .recruitment-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px var(--shadow-hover);
+        }
+
+        .recruitment-card.closed {
+            opacity: 0.7;
+            background: #f5f5f5;
+        }
+
+        .recruitment-card.closed:hover {
+            transform: none;
+            box-shadow: 0 4px 15px var(--shadow-color);
+        }
+
+        .recruitment-card.closed .card-title,
+        .recruitment-card.closed .card-meta {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .recruitment-card.closed::after {
+            content: '마감';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(185, 28, 28, 0.9);
+            color: white;
+            padding: 12px 40px;
+            border-radius: 16px;
+            font-weight: 800;
+            font-size: 1.5rem;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .recruitment-card.closed .btn-detail {
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        .card-content {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .card-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 2.8em; /* 2줄 높이 확보 */
+        }
+
+        .card-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+        .card-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-meta-item i {
+            color: var(--primary-light);
+            width: 16px;
+            text-align: center;
+        }
+
+        .card-footer {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px dashed var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .status-badge {
+            padding: 5px 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            border-radius: 20px;
+        }
+        .status-badge.recruiting { background: #D4E2D4; color: #5A8B73; }
+        .status-badge.closed { background: #FEE2E2; color: #B91C1C; }
+
+        .btn-detail {
+            background: var(--bg-cream);
+            color: var(--primary-dark);
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 8px 16px;
+            transition: all 0.2s;
+        }
+        .btn-detail:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .empty-message {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 5rem 1rem;
+            background: rgba(255, 255, 255, 0.6);
+            border: 2px dashed var(--border-color);
+            border-radius: 24px;
+        }
+        .empty-message i { font-size: 3rem; margin-bottom: 1rem; color: var(--text-light); }
+        .empty-message p { font-size: 1.1rem; margin-bottom: 2rem; color: var(--text-secondary); }
+        .btn-explore {
+            display: inline-block;
+            background: var(--primary);
+            color: var(--white);
+            padding: 12px 30px;
+            text-decoration: none;
+            font-weight: 600;
+            border-radius: 50px;
+            transition: all 0.3s;
+        }
+
+        @media (max-width: 991px) {
+            .recruitment-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+		@media (max-width: 768px) {
+		    .recruitment-grid {
+		        grid-template-columns: 1fr; /* 1열 배치 */
+		        gap: 1rem;
+		        padding: 5px;
+		    }
+
+		    .recruitment-card {
+		        flex-direction: row;
+		        border: none;
+		        background: var(--white);
+		        border-radius: 16px;
+		        box-shadow: 0 5px 15px rgba(166, 124, 82, 0.08); /* 부드러운 그림자 */
+		        position: relative;
+		        overflow: hidden;
+		    }
+
+		    /* 왼쪽에 상태를 나타내는 얇은 컬러 바 추가 */
+		    .recruitment-card::before {
+		        content: '';
+		        position: absolute;
+		        left: 0;
+		        top: 0;
+		        bottom: 0;
+		        width: 5px;
+		        background: var(--primary); /* 기본 컬러 */
+		    }
+
+		    /* 모집마감일 경우 회색 바 */
+		    .recruitment-card.closed::before {
+		        background: #D1D5DB;
+		    }
+
+		    .recruitment-card.closed::after {
+		        font-size: 1rem;
+		        padding: 8px 24px;
+		    }
+
+		    .card-content {
+		        padding: 1.25rem;
+		        width: 100%;
+		    }
+
+		    .card-title {
+		        font-size: 1.15rem;
+		        margin-bottom: 0.75rem;
+		        min-height: auto; /* 모바일에서는 높이 자동 */
+		        -webkit-line-clamp: 1; /* 한 줄로 깔끔하게 */
+		        color: var(--text-primary);
+		    }
+
+		    .card-meta {
+		        margin-bottom: 1rem;
+		        gap: 0.4rem;
+		    }
+
+		    .card-meta-item {
+		        font-size: 0.85rem;
+		    }
+
+		    .card-meta-item i {
+		        color: var(--primary);
+		        opacity: 0.7;
+		    }
+
+		    .card-footer {
+		        padding-top: 0.75rem;
+		        border-top: 1px solid #F3F4F6;
+		    }
+
+		    .status-badge {
+		        font-size: 0.7rem;
+		        padding: 3px 10px;
+		    }
+
+		    .btn-detail {
+		        font-size: 0.85rem;
+		        padding: 6px 12px;
+		        background: transparent;
+		        color: var(--primary);
+		        font-weight: 700;
+		    }
+		    
+		    .btn-detail:hover {
+		        background: var(--bg-cream);
+		        color: var(--primary-dark);
+		    }
+		}
+    </style>
+</head>
+
+<body>
+
+    <div th:replace="~{include/navibar :: header-nav}"></div>
+
+    <div class="custom-container">
+        
+        <div class="text-center mb-5">
+            <h1 class="page-title">나의 모임</h1>
+            <p class="page-subtitle">내가 주최했거나 참여 신청한 모임 목록입니다.</p>
+        </div>
+
+        <div th:if="${#lists.isEmpty(recruitmentList)}" class="empty-message">
+            <i class="bi bi-calendar-x"></i>
+            <p>관련된 모임이 없습니다.</p>
+            <a href="/" class="btn-explore">
+                메인으로 돌아가기
+            </a>
+        </div>
+
+        <div th:unless="${#lists.isEmpty(recruitmentList)}" class="recruitment-grid">
+            <div th:each="recruitment : ${recruitmentList}"
+                 th:class="${recruitment.status == 'OPEN' ? 'recruitment-card' : 'recruitment-card closed'}">
+                <div class="card-content">
+                    <h3 class="card-title" th:text="${recruitment.title}">
+                        모임 제목이 들어갑니다
+                    </h3>
+
+                    <div class="card-meta">
+                        <div class="card-meta-item">
+                            <i class="bi bi-person-fill"></i>
+                            <span>주최자: <span class="fw-semibold" th:text="${recruitment.writer}">User</span></span>
+                        </div>
+                        <div class="card-meta-item">
+                            <i class="bi bi-calendar-check-fill"></i>
+                            <span>모임일: <span class="fw-semibold" th:text="${recruitment.meetingDate}">2025-00-00</span></span>
+                        </div>
+                    </div>
+
+                    <div class="card-footer">
+                        <a th:href="@{/recruitment/{id}(id=${recruitment.id})}" class="btn-detail">
+                            자세히 보기
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+	<div th:replace="~{include/bottom-navbar :: bottom-nav}"></div>
+</body>
+</html>

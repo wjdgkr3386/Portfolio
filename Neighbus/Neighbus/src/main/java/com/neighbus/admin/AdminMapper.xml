@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.neighbus.admin.AdminMapper">
+
+    <select id="selectAllReports" resultType="com.neighbus.admin.ReportDTO">
+        SELECT
+            r.id,
+            r.type,
+            r.reporter_id AS reporterId,
+            r.target_id AS targetId,
+            r.reason,
+            r.created_at AS createdAt,
+            r.status,
+            u.nickname AS reporterName,
+            COALESCE(
+                CASE
+                    WHEN r.type = 'POST' THEN (SELECT u2.name FROM freeboards f LEFT JOIN users u2 ON f.writer = u2.id WHERE f.id = r.target_id)
+                    WHEN r.type = 'GALLERY' THEN (SELECT u2.name FROM galleries g LEFT JOIN users u2 ON g.writer = u2.id WHERE g.id = r.target_id)
+                    WHEN r.type = 'GATHERING' THEN (SELECT u2.name FROM recruitments rec LEFT JOIN users u2 ON rec.writer = u2.id WHERE rec.id = r.target_id)
+                    WHEN r.type = 'COMMENT' THEN (
+                        SELECT COALESCE(
+                            (SELECT u2.name FROM freeboard_comments fc LEFT JOIN users u2 ON fc.writer = u2.id WHERE fc.id = r.target_id),
+                            (SELECT u2.name FROM gallery_comments gc LEFT JOIN users u2 ON gc.writer = u2.id WHERE gc.id = r.target_id)
+                        )
+                    )
+                    WHEN r.type = 'USER' THEN (SELECT u2.name FROM users u2 WHERE u2.id = r.target_id)
+                    WHEN r.type = 'CLUB' THEN (SELECT c.club_name FROM clubs c WHERE c.id = r.target_id)
+                    ELSE NULL
+                END,
+                '삭제된 컨텐츠'
+            ) AS targetAuthorName,
+            CASE
+                WHEN r.type = 'COMMENT' AND fc.id IS NOT NULL THEN 'FREEBOARD'
+                WHEN r.type = 'COMMENT' AND gc.id IS NOT NULL THEN 'GALLERY'
+                ELSE NULL
+            END AS parentType,
+            CASE
+                WHEN r.type = 'COMMENT' THEN COALESCE(fc.freeboard, gc.gallery)
+                ELSE NULL
+            END AS parentId
+        FROM reports r
+        LEFT JOIN users u ON r.reporter_id = u.id
+        LEFT JOIN freeboard_comments fc ON r.type = 'COMMENT' AND fc.id = r.target_id
+        LEFT JOIN gallery_comments gc ON r.type = 'COMMENT' AND gc.id = r.target_id
+        ORDER BY r.id ASC
+    </select>
+
+    <select id="countTotalReports" resultType="int">
+        SELECT COUNT(*) FROM reports
+    </select>
+
+    <select id="countReportsByStatus" resultType="int">
+        SELECT COUNT(*) FROM reports WHERE status = #{status}
+    </select>
+
+    <update id="updateReportStatus">
+        UPDATE reports 
+        SET status = #{status} 
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteReport">
+        DELETE FROM reports WHERE id = #{id}
+    </delete>
+
+    <select id="selectDashboardStats" resultType="map">
+        SELECT
+            (SELECT COUNT(*) FROM users) AS totalUsers,
+            (SELECT COUNT(*) FROM users WHERE DATE(created_at) = CURDATE()) AS todaySignups,
+            (SELECT COUNT(*) FROM freeboards) + (SELECT COUNT(*) FROM galleries) + (SELECT COUNT(*) FROM recruitments) AS totalPosts,
+            (SELECT COUNT(*) FROM inquiries WHERE state = 1) AS pendingInquiries
+    </select>
+    
+    <select id="selectMonthlySignups" resultType="map">
+        SELECT
+            DATE_FORMAT(created_at, '%Y-%m') AS month,
+            COUNT(*) AS count
+        FROM users
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+        GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+        ORDER BY month ASC
+    </select>
+    
+    <select id="selectTopClubsByMembers" resultType="map">
+        SELECT
+            c.club_name AS clubName,
+            COUNT(cm.user_id) AS memberCount
+        FROM clubs c
+        LEFT JOIN club_members cm ON c.id = cm.club_id
+        GROUP BY c.id, c.club_name
+        ORDER BY memberCount DESC
+        LIMIT 5
+    </select>
+
+    <select id="selectGatheringsByCategory" resultType="map">
+        SELECT
+            cc.name AS categoryName,
+            COUNT(c.id) AS clubCount
+        FROM
+            club_categorys cc
+        LEFT JOIN
+            clubs c ON cc.id = c.category
+        GROUP BY
+            cc.id, cc.name
+        HAVING COUNT(c.id) > 0
+        ORDER BY
+            clubCount DESC
+        LIMIT 7
+    </select>
+
+    <select id="selectAllUsers" resultType="map">
+        SELECT
+            u.id, u.name, u.username, u.email, u.phone, u.nickname, u.created_at,
+            g.grade AS grade_name, c.city AS city_name, p.province AS province_name
+        FROM users u
+        LEFT JOIN grades g ON u.grade = g.id
+        LEFT JOIN cities c ON u.city = c.id
+        LEFT JOIN provinces p ON u.province = p.id
+        ORDER BY u.id DESC
+    </select>
+
+    <delete id="deleteUser" parameterType="int">
+        DELETE FROM users WHERE id = #{userId}
+    </delete>
+
+    <select id="countTodaySignups" resultType="int">
+        SELECT COUNT(*) FROM users WHERE DATE(created_at) = CURDATE()
+    </select>
+
+    <select id="countAdminUsers" resultType="int">
+        SELECT COUNT(*) FROM users WHERE grade = 0
+    </select>
+
+    <select id="countTotalUsers" parameterType="map" resultType="int">
+        SELECT COUNT(*)
+        FROM users u
+        LEFT JOIN grades g ON u.grade = g.id
+        <where>
+            <if test="role != null and role != ''">
+                <choose>
+                    <when test="role == '관리자'">
+                        AND g.grade = '관리자'
+                    </when>
+                    <when test="role == '일반회원'">
+                        AND g.grade != '관리자'
+                    </when>
+                </choose>
+            </if>
+        </where>
+    </select>
+
+    <select id="selectUsersPaginated" parameterType="map" resultType="map">
+        SELECT
+            u.id, u.name, u.username, u.email, u.phone, u.nickname, u.created_at,
+            g.grade AS grade_name, c.city AS city_name, p.province AS province_name
+        FROM users u
+        LEFT JOIN grades g ON u.grade = g.id
+        LEFT JOIN cities c ON u.city = c.id
+        LEFT JOIN provinces p ON u.province = p.id
+        <where>
+            <if test="role != null and role != ''">
+                <choose>
+                    <when test="role == '관리자'">
+                        AND g.grade = '관리자'
+                    </when>
+                    <when test="role == '일반회원'">
+                        AND g.grade != '관리자'
+                    </when>
+                </choose>
+            </if>
+        </where>
+        <choose>
+            <when test='sortField != null and sortField == "created_at"'>
+                ORDER BY u.created_at ${sortOrder}
+            </when>
+            <otherwise>
+                ORDER BY u.id ${sortOrder}
+            </otherwise>
+        </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="selectPostsWithCommentCount" resultType="map">
+        SELECT
+            '자유게시판' AS category, p.id, p.title, u.username AS writerUsername, u.nickname AS writerNickname,
+            p.view_count AS viewCount, p.created_at AS createdAt,
+            (SELECT COUNT(*) FROM freeboard_comments c WHERE c.freeboard = p.id) AS commentCount
+        FROM freeboards p
+        LEFT JOIN users u ON p.writer = u.id
+        ORDER BY p.id DESC
+    </select>
+
+    <select id="countTotalPosts" parameterType="map" resultType="int">
+        SELECT COUNT(*)
+        FROM freeboards p
+        LEFT JOIN users u ON p.writer = u.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (p.title LIKE CONCAT('%', #{keyword}, '%') OR u.nickname LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+    </select>
+
+    <select id="selectPostsPaginated" parameterType="map" resultType="map">
+        SELECT
+            '자유게시판' AS category, p.id, p.title, u.username AS writerUsername, u.nickname AS writerNickname, u.name as writerName,
+            p.view_count AS viewCount, p.created_at AS createdAt,
+            (SELECT COUNT(*) FROM freeboard_comments c WHERE c.freeboard = p.id) AS commentCount
+        FROM freeboards p
+        LEFT JOIN users u ON p.writer = u.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (p.title LIKE CONCAT('%', #{keyword}, '%') OR u.nickname LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        <choose>
+            <when test='sortField != null and sortField == "viewCount"'>
+                ORDER BY viewCount ${sortOrder}
+            </when>
+            <when test='sortField != null and sortField == "commentCount"'>
+                ORDER BY commentCount ${sortOrder}
+            </when>
+            <when test='sortField != null and sortField == "createdAt"'>
+                ORDER BY p.created_at ${sortOrder}
+            </when>
+            <otherwise>
+                ORDER BY p.id ${sortOrder}
+            </otherwise>
+        </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="selectPostStats" resultType="map">
+        SELECT
+            (SELECT COUNT(*) FROM freeboards WHERE DATE(created_at) = CURDATE()) AS todayPosts,
+            (SELECT COUNT(*) FROM freeboard_comments) AS totalComments
+        FROM DUAL
+    </select>
+
+    <select id="selectAllClubsWithMemberCount" resultType="map">
+        SELECT
+            c.id, c.club_name AS clubName, c.club_info AS clubInfo, c.created_at AS createdAt,
+            ci.city AS cityName, p.province AS provinceName,
+            COUNT(cm.user_id) AS memberCount
+        FROM clubs c
+        LEFT JOIN cities ci ON c.city = ci.id
+        LEFT JOIN provinces p ON c.province_id = p.id
+        LEFT JOIN club_members cm ON c.id = cm.club_id
+        GROUP BY c.id
+        ORDER BY c.created_at DESC
+    </select>
+
+    <delete id="deleteClub" parameterType="int">
+        DELETE FROM clubs WHERE id = #{clubId}
+    </delete>
+
+    <select id="sumTotalClubMembers" resultType="int">
+        SELECT COUNT(*) FROM club_members
+    </select>
+
+    <select id="countTotalClubs" parameterType="map" resultType="int">
+        SELECT COUNT(*)
+        FROM clubs c
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND c.club_name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+    </select>
+
+    <select id="selectClubsPaginated" parameterType="map" resultType="map">
+        SELECT
+            c.id, c.club_name AS clubName, c.club_info AS clubInfo, c.created_at AS createdAt,
+            ci.city AS cityName, p.province AS provinceName,
+            cc.name AS categoryName,
+            u.name AS creatorName,
+            u.username AS creatorUsername,
+            COUNT(cm.user_id) AS memberCount
+        FROM clubs c
+        LEFT JOIN cities ci ON c.city = ci.id
+        LEFT JOIN provinces p ON c.province_id = p.id
+        LEFT JOIN club_members cm ON c.id = cm.club_id
+        LEFT JOIN club_categorys cc ON c.category = cc.id
+        LEFT JOIN users u ON c.write_id = u.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND c.club_name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+        GROUP BY c.id, cc.name, u.name, u.username
+        <choose>
+            <when test='sortField != null and sortField == "memberCount"'>
+                ORDER BY memberCount ${sortOrder}
+            </when>
+            <when test='sortField != null and sortField == "created_at"'>
+                ORDER BY c.created_at ${sortOrder}
+            </when>
+            <otherwise>
+                ORDER BY c.id ${sortOrder}
+            </otherwise>
+        </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="selectAllGalleries" resultType="map">
+        SELECT
+            g.id AS galleryId, g.title, g.writer, g.club_id AS clubId, g.view_count AS viewCount, g.created_at AS createdAt,
+            u.username AS writerUsername, u.nickname AS writerNickname, c.club_name AS clubName
+        FROM galleries g
+        LEFT JOIN users u ON g.writer = u.id
+        LEFT JOIN clubs c ON g.club_id = c.id
+        ORDER BY g.created_at DESC
+        LIMIT 100
+    </select>
+
+    <delete id="deleteGalleryComments" parameterType="int">
+        DELETE FROM gallery_comments WHERE gallery = #{galleryId}
+    </delete>
+
+    <delete id="deleteGalleryImages" parameterType="int">
+        DELETE FROM gallery_images WHERE gallery = #{galleryId}
+    </delete>
+
+    <delete id="deleteGallery" parameterType="int">
+        DELETE FROM galleries WHERE id = #{galleryId}
+    </delete>
+
+    <select id="countTotalGalleries" parameterType="map" resultType="int">
+        SELECT COUNT(*)
+        FROM galleries g
+        LEFT JOIN users u ON g.writer = u.id
+        LEFT JOIN clubs c ON g.club_id = c.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                (g.title LIKE CONCAT('%', #{keyword}, '%') OR u.nickname LIKE CONCAT('%', #{keyword}, '%') OR u.username LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="clubName != null and clubName != ''">
+                AND c.club_name = #{clubName}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectGalleriesPaginated" parameterType="map" resultType="map">
+        SELECT
+            g.id AS galleryId, g.title, g.writer, g.club_id AS clubId, g.view_count AS viewCount, g.created_at AS createdAt,
+            u.username AS writerUsername, u.nickname AS writerNickname, u.name AS writerName, c.club_name AS clubName,
+            (SELECT COUNT(*) FROM gallery_comments gc WHERE gc.gallery = g.id) AS commentCount
+        FROM galleries g
+        LEFT JOIN users u ON g.writer = u.id
+        LEFT JOIN clubs c ON g.club_id = c.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                (g.title LIKE CONCAT('%', #{keyword}, '%') OR u.nickname LIKE CONCAT('%', #{keyword}, '%') OR u.username LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="clubName != null and clubName != ''">
+                AND c.club_name = #{clubName}
+            </if>
+        </where>
+        <choose>
+            <when test='sortField != null and sortField == "viewCount"'>
+                ORDER BY viewCount ${sortOrder}
+            </when>
+            <when test='sortField != null and sortField == "commentCount"'>
+                ORDER BY commentCount ${sortOrder}
+            </when>
+            <when test='sortField != null and sortField == "createdAt"'>
+                ORDER BY g.created_at ${sortOrder}
+            </when>
+            <otherwise>
+                ORDER BY g.id ${sortOrder}
+            </otherwise>
+        </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="selectGalleryStats" resultType="map">
+        SELECT
+            (SELECT COALESCE(SUM(view_count), 0) FROM galleries) AS totalViews,
+            (SELECT COUNT(*) FROM galleries WHERE DATE(created_at) = CURDATE()) AS todayGalleries
+        FROM DUAL
+    </select>
+
+    <insert id="insertReport" parameterType="com.neighbus.admin.ReportDTO">
+        INSERT INTO reports (type, reporter_id, target_id, reason, status)
+        VALUES (#{type}, #{reporterId}, #{targetId}, #{reason}, 'PROCESSING')
+    </insert>
+
+    <select id="selectClubDashboardStats" parameterType="int" resultType="map">
+        SELECT
+            (SELECT COUNT(*) FROM club_members WHERE club_id = #{clubId}) AS totalMembers,
+            (SELECT COUNT(*) FROM club_members WHERE club_id = #{clubId} AND DATE(created_at) = CURDATE()) AS todayJoins,
+            ((SELECT COUNT(*) FROM freeboards WHERE club_id = #{clubId}) + (SELECT COUNT(*) FROM galleries WHERE club_id = #{clubId})) AS totalPosts
+    </select>
+    
+    <update id="blockUser" parameterType="HashMap">
+		update users set is_blocked=1, blocked_until=DATE_ADD(NOW(), INTERVAL #{banTime} DAY) where id=#{id};
+	</update>
+
+	<update id="unblockUser">
+		update
+			users
+		set
+			is_blocked=0,
+			blocked_until=null
+		where
+		<![CDATA[
+			blocked_until IS NOT NULL
+			AND
+      		blocked_until <= NOW()
+      	]]>
+	</update>
+
+	<select id="getPostWriterId" resultType="java.lang.Integer">
+		SELECT writer FROM freeboards WHERE id = #{postId}
+	</select>
+
+	<select id="getGalleryWriterId" resultType="java.lang.Integer">
+		SELECT writer FROM galleries WHERE id = #{galleryId}
+	</select>
+
+	<select id="getGatheringWriterId" resultType="java.lang.Integer">
+		SELECT writer FROM recruitments WHERE id = #{gatheringId}
+	</select>
+
+	<select id="getCommentWriterId" resultType="java.lang.Integer">
+		SELECT COALESCE(
+			(SELECT writer FROM freeboard_comments WHERE id = #{commentId}),
+			(SELECT writer FROM gallery_comments WHERE id = #{commentId})
+		) AS writer
+	</select>
+
+	<select id="getClubOwnerId" resultType="java.lang.Integer">
+		SELECT write_id FROM clubs WHERE id = #{clubId} LIMIT 1
+	</select>
+
+    <select id="selectGatheringsPaginated" parameterType="map" resultType="map">
+        SELECT
+            r.id,
+            r.title,
+            r.club_id AS clubId,
+            c.club_name AS clubName,
+            r.writer,
+            u.name AS writerName,
+            u.username AS writerUsername,
+            u.nickname AS writerNickname,
+            r.max_user AS maxUser,
+            DATE_FORMAT(r.meeting_date, '%Y-%m-%d') AS meetingDate,
+            r.status,
+            r.created_at AS createdAt,
+            (SELECT COUNT(*) FROM recruitment_member rm WHERE rm.recruitment_id = r.id) AS memberCount
+        FROM recruitments r
+        LEFT JOIN clubs c ON r.club_id = c.id
+        LEFT JOIN users u ON r.writer = u.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (r.title LIKE CONCAT('%', #{keyword}, '%') OR c.club_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null and status != ''">
+                AND r.status = #{status}
+            </if>
+        </where>
+        <choose>
+            <when test='sortField != null and sortField == "clubId"'>
+                ORDER BY r.club_id ${sortOrder}
+            </when>
+            <when test='sortField != null and sortField == "meetingDate"'>
+                ORDER BY r.meeting_date ${sortOrder}
+            </when>
+            <otherwise>
+                ORDER BY r.id ${sortOrder}
+            </otherwise>
+        </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countTotalGatherings" parameterType="map" resultType="int">
+        SELECT COUNT(*)
+        FROM recruitments r
+        LEFT JOIN clubs c ON r.club_id = c.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (r.title LIKE CONCAT('%', #{keyword}, '%') OR c.club_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null and status != ''">
+                AND r.status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <delete id="deleteGathering" parameterType="int">
+        DELETE FROM recruitments WHERE id = #{id}
+    </delete>
+
+    <select id="selectGatheringDashboardStats" resultType="map">
+        SELECT
+            (SELECT COUNT(*) FROM recruitments) AS totalElements,
+            (SELECT COUNT(*) FROM recruitments WHERE status = 'OPEN') AS activeGatherings,
+            (SELECT COUNT(*) FROM recruitments WHERE status = 'CLOSED') AS endedGatherings
+        FROM DUAL
+    </select>
+
+</mapper>

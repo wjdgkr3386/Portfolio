@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>필터</title>
+    <script src="/js/common.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/css/navibar.css">
+    <link rel="stylesheet" href="/css/bottom-navbar.css">
+    <link rel="stylesheet" href="/css/custom-modal.css">
+    <script src="/js/custom-modal.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #F97316;
+            --primary-color-light: #FB923C;
+            --accent-color: #F97316;
+            --accent-color-hover: #EA580C;
+            --background-color: #FFFFFF; /* 바디 흰색 고정 */
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --border-color: #E2E8F0;
+            --card-bg: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            background: var(--background-color);
+            color: var(--text-primary);
+        }
+
+        /* 컨테이너 */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* 셀렉트 + 버튼 그룹 */
+        .region-select-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap; /* 화면 좁으면 버튼 아래로 내려감 */
+            margin-bottom: 30px;
+            background: #F9FAFB;
+            padding: 16px 20px;
+            border-radius: 12px;
+            border: 1px solid #E5E7EB;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        select {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #D1D5DB;
+            background-color: #FFFFFF;
+            font-size: 14px;
+            color: var(--text-primary);
+            min-width: 140px;
+            transition: all 0.2s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
+        }
+
+        /* 버튼 스타일 */
+        #filterBtn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            background-color: var(--accent-color);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #filterBtn:hover {
+            background-color: var(--accent-color-hover);
+            transform: translateY(-2px);
+        }
+
+        /* 카드 그리드 */
+        .gatherings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .activity-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .activity-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background-color: var(--border-color);
+        }
+
+        .card-content {
+            padding: 20px;
+        }
+
+        .card-category {
+            display: inline-block;
+            padding: 5px 12px;
+            background: #EEF2FF;
+            color: var(--primary-color);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #F1F5F9;
+            font-size: 13px;
+            color: #94A3B8;
+        }
+
+        .card-status.recruiting {
+            background: #DCFCE7;
+            color: #16A34A;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div th:replace="~{include/navibar :: header-nav}"></div>
+
+    <div class="container">
+        <form id="goForm" name="goForm">
+            <div class="region-select-group">
+                <select id="province" name="provinceId" required>
+                    <option value="" disabled selected>시/도 선택</option>
+                    <option th:each="province : ${provinceList}" th:value="${province.get('id')}"
+                        th:text="${province.get('province')}"></option>
+                </select>
+
+                <select id="city" name="city" required disabled>
+                    <option value="" disabled selected>시/군/구 선택</option>
+                </select>
+
+                <button type="button" id="filterBtn">필터 적용</button>
+            </div>
+        </form>
+
+        <div class="gatherings-grid" id="clubListFragment" th:fragment="clubListFragment">
+            <a th:each="club : ${clubs}" th:href="@{/club/{id}(id=${club.id})}" class="activity-card">
+                <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=400"
+                    th:alt="${club.clubName}" class="card-image">
+                <div class="card-content">
+                    <span class="card-category" th:text="${club.cityName}">지역명</span>
+                    <h3 class="card-title" th:text="${club.clubName}">동아리 이름</h3>
+                    <div class="card-footer">
+                        <span class="card-members">지역: <span th:text="${club.provinceName}">지역명</span></span>
+                        <span class="card-status recruiting">모집중</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script th:inline="javascript">
+        const regionList = /*[[${regionList}]]*/ null;
+
+        $(document).ready(function () {
+            const $provinceSelect = $('#province');
+            const $citySelect = $('#city');
+            const $filterBtn = $('#filterBtn');
+            const $form = $("[name='goForm']");
+
+            $provinceSelect.on('change', function () {
+                const selectedValue = parseInt(this.value, 10);
+                $citySelect.empty().append('<option value="" disabled selected>시/군/구 선택</option>').prop('disabled', true);
+
+                if (regionList && selectedValue) {
+                    $.each(regionList, function (i, region) {
+                        if (parseInt(region.province, 10) === selectedValue) {
+                            $citySelect.append($('<option>', { value: region.id, text: region.city }));
+                        }
+                    });
+                    $citySelect.prop('disabled', false);
+                }
+            });
+
+            $filterBtn.on('click', function () {
+                const ajaxUrl = "/club/filter-clubs";
+                const formData = $form.serialize();
+
+                $.ajax({
+                    url: ajaxUrl,
+                    type: "post",
+                    data: formData,
+                    success: function (response) {
+                        $("#clubListFragment").html(response);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("AJAX Error:", status, error);
+                        showModal('error', '오류', '필터링 중 오류가 발생했습니다.');
+                    }
+                });
+            });
+        });
+    </script>
+<div th:replace="~{include/bottom-navbar :: bottom-nav}"></div>
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</html>

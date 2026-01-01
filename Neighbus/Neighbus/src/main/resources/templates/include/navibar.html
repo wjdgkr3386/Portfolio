@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<header th:fragment="header-nav" id="header">
+
+   <style>
+      /* [공통] 네비바 높이 축소 */
+      .nb-navbar {
+         min-height: 50px !important;
+         padding: 0 !important;
+         background-color: white;
+         border-bottom: 1px solid #eee;
+      }
+
+      /* [PC/모바일 공통] 컨테이너 설정 */
+      .nb-navbar .container {
+         height: 50px !important;
+         display: flex !important;
+         align-items: center !important;
+         flex-wrap: nowrap !important;
+         /* 절대 줄바꿈 금지 */
+         justify-content: space-between !important;
+      }
+
+      /* [공통] 로고 기본 설정 */
+      .nb-brand {
+         font-weight: 800;
+         color: #A67C52;
+         line-height: 1;
+         white-space: nowrap;
+         /* 글자 줄바꿈 금지 */
+         margin-right: 0 !important;
+         /* 불필요한 여백 제거 */
+      }
+
+      /* [모바일 전용 강력 수정] 991px 이하 */
+      @media (max-width: 991px) {
+
+         /* 1. 컨테이너 좌우 여백 축소 (공간 확보) */
+         .nb-navbar .container {
+            padding-left: 15px !important;
+            padding-right: 15px !important;
+            max-width: 100% !important;
+         }
+
+         /* 2. 로고 크기 축소 */
+         .nb-brand {
+            font-size: 1.1rem !important;
+            /* 1.25 -> 1.1로 더 축소 */
+         }
+
+         /* 3. 우측 아이콘 간격(gap) 축소 */
+         .nb-mobile-gap {
+            gap: 0.5rem !important;
+            /* 기존 gap-3(1rem) -> 0.5rem */
+         }
+      }
+
+      /* [PC 전용] */
+      @media (min-width: 992px) {
+         .nb-brand {
+            font-size: 1.35rem !important;
+         }
+
+         .nb-mobile-gap {
+            gap: 1rem !important;
+         }
+      }
+
+      /* 로그인/회원가입 버튼 스타일 */
+      .nb-auth-buttons {
+         display: flex;
+         align-items: center;
+         gap: 0.4rem;
+      }
+
+      .nb-btn-outline,
+      .nb-btn-primary {
+         font-size: 0.75rem !important;
+         padding: 0.3rem 0.6rem !important;
+         border-radius: 6px !important;
+         font-weight: 600 !important;
+         white-space: nowrap;
+      }
+
+      .nb-btn-outline {
+         color: #A67C52 !important;
+         border: 1.5px solid #A67C52 !important;
+         background: white !important;
+      }
+
+      .nb-btn-outline:hover {
+         background: #A67C52 !important;
+         color: white !important;
+      }
+
+      .nb-btn-primary {
+         background: #A67C52 !important;
+         border: 1.5px solid #A67C52 !important;
+         color: white !important;
+      }
+
+      .nb-btn-primary:hover {
+         background: #8D6E63 !important;
+         border-color: #8D6E63 !important;
+      }
+
+      @media (max-width: 991px) {
+         /* 모바일/아이패드에서 로그인 버튼 숨김 */
+         .nb-auth-buttons {
+            display: none !important;
+         }
+      }
+   </style>
+
+   <nav class="navbar navbar-expand-lg fixed-top nb-navbar">
+      <div class="container">
+
+         <a class="navbar-brand nb-brand" href="/">NEIGHBUS</a>
+
+         <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+            <ul class="navbar-nav align-items-center d-none d-lg-flex">
+               <li class="nav-item"><a class="nav-link nb-nav-link" href="/about"
+                     style="font-size: 0.95rem;">소개</a></li>
+               <li class="nav-item"><a class="nav-link nb-nav-link" href="/club"
+                     style="font-size: 0.95rem;">동아리</a></li>
+               <li class="nav-item"><a class="nav-link nb-nav-link" href="/freeboard"
+                     style="font-size: 0.95rem;">게시판</a></li>
+               <li class="nav-item"><a class="nav-link nb-nav-link" href="/gallery"
+                     style="font-size: 0.95rem;">갤러리</a></li>
+            </ul>
+         </div>
+
+         <div class="d-flex align-items-center nb-mobile-gap" style="flex-shrink: 0;">
+
+            <!-- 로그인 안 된 상태: 로그인/회원가입 버튼 -->
+            <div class="nb-auth-buttons" sec:authorize="!isAuthenticated()">
+               <a href="/account/login" class="btn btn-outline-primary btn-sm nb-btn-outline">로그인</a>
+               <a href="/account/signup" class="btn btn-primary btn-sm nb-btn-primary">회원가입</a>
+            </div>
+
+            <!-- 로그인 된 상태: 알림/프로필/메뉴 -->
+            <div class="d-flex align-items-center nb-mobile-gap" sec:authorize="isAuthenticated()">
+
+
+
+               <a href="#"
+                  onclick="if(typeof openNotificationModal === 'function') openNotificationModal(); return false;"
+                  class="position-relative text-dark text-decoration-none"
+                  style="display: flex; align-items: center;">
+                  <i class="bi bi-bell" style="font-size: 1.25rem; color: #5D4037;"></i>
+                  <span th:if="${unreadCount != null and unreadCount > 0}"
+                     class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                     style="font-size: 0.5rem; padding: 0.25em 0.4em;">
+                     <span th:text="${unreadCount}"></span>
+                  </span>
+               </a>
+               <!-- 마이페이지 -->
+			   <a href="/mypage" class="nb-profile-link d-none d-lg-block">
+			      <img th:src="${#authentication.principal.image}"
+			         class="rounded-circle border nb-profile-img"
+			         style="width:38px; height:38px; object-fit:cover;" alt="프로필">
+			   </a>
+
+               <div class="dropdown">
+                  <button class="btn p-0 border-0 bg-transparent ms-1" type="button" data-bs-toggle="dropdown"
+                     aria-expanded="false" style="display: flex; align-items: center;">
+                     <i class="bi bi-list" style="font-size: 1.6rem; color: #5D4037;"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end nb-dropdown-menu text-center text-lg-start"
+                     style="position: absolute;">
+                     <li><a class="dropdown-item nb-dropdown-item" href="/notice"
+                           style="font-size: 0.9rem;">공지사항</a></li>
+                     <li class="d-none d-md-block">
+                        <a class="dropdown-item nb-dropdown-item" href="/friend/list"
+                           style="font-size: 0.9rem;">채팅</a></li>
+                     <li><a class="dropdown-item nb-dropdown-item" href="/club/myClubPage"
+                           style="font-size: 0.9rem;">내 동아리</a></li>
+                     <li><a class="dropdown-item nb-dropdown-item" href="/recruitment/myRecruitments"
+                           style="font-size: 0.9rem;">나의 모임</a></li>
+                     <li><a class="dropdown-item nb-dropdown-item" href="/inquiry" style="font-size: 0.9rem;">문의
+                           하기</a></li>
+                     <li>
+                        <hr class="dropdown-divider">
+                     </li>
+                     <li>
+                        <form action="/logout" method="post" class="m-0">
+                           <button type="submit" class="dropdown-item text-danger nb-dropdown-item"
+                              style="font-size: 0.9rem;">로그아웃</button>
+                        </form>
+                     </li>
+                  </ul>
+               </div>
+            </div>
+         </div>
+
+      </div>
+   </nav>
+   <div th:replace="~{fragments/notificationModal :: notificationModal}"></div>
+
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+   <script src="/js/common.js"></script>
+   <script src="/js/main.js"></script>
+</header>
+
+</html>

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.neighbus.friend.FriendMapper">
+	<select id="getMyUuid" parameterType="int" resultType="String">
+		select user_uuid from users where id=#{id}
+	</select>
+
+	<select id="checkUuid" parameterType="String" resultType="int">
+		select count(*) from users where user_uuid=#{friendUuid}
+	</select>
+
+	<select id="checkMyUuid" parameterType="HashMap" resultType="int">
+		select count(*) from users where id=#{myId} and user_uuid=#{friendUuid}
+	</select>
+
+	<select id="checkFriendRequestByUuid" parameterType="HashMap"
+		resultType="int">
+		select count(*) from friend_state
+		where
+		(sender=#{myId} and receiver=(select id from users where
+		user_uuid=#{friendUuid}))
+		or
+		(sender=(select id from users where user_uuid=#{friendUuid}) and receiver=#{myId})
+	</select>
+
+	<select id="checkFriend" parameterType="HashMap" resultType="int">
+		select count(*) from friends
+		where
+		my_id=#{myId} and
+		friend_id=(select id from users where user_uuid=#{friendUuid})
+	</select>
+
+	<select id="checkFriendRequest" parameterType="HashMap" resultType="int">
+		select count(*) from friend_state
+		where
+		sender=#{friendId} and receiver=#{myId}
+	</select>
+
+	<insert id="friendRequest" parameterType="HashMap">
+		INSERT INTO friend_state (sender, receiver, state)
+		VALUES (
+		#{myId},
+		(SELECT id FROM users WHERE user_uuid=#{friendUuid}),
+		1
+		)
+	</insert>
+
+	<insert id="addFriend" parameterType="HashMap">
+		INSERT INTO friends (my_id, friend_id) VALUES
+		(#{myId}, #{friendId}),
+		(#{friendId}, #{myId})
+	</insert>
+
+	<update id="acceptFriendRequestState" parameterType="HashMap">
+		UPDATE friend_state
+		SET state = 2
+		WHERE
+		sender = #{friendId} AND receiver = #{myId}
+	</update>
+
+	<update id="refuseFriendRequestState" parameterType="HashMap">
+		UPDATE friend_state
+		SET state = 3
+		WHERE
+		sender = #{friendId}
+		AND
+		receiver = #{myId}
+	</update>
+
+	<delete id="deleteFriendState" parameterType="HashMap">
+		DELETE FROM friend_state
+		WHERE
+		(sender = #{friendId} and receiver = #{myId})
+		OR
+		(sender = #{myId} and receiver = #{friendId})
+	</delete>
+
+	<delete id="deleteFriend" parameterType="HashMap">
+		DELETE FROM friends
+		WHERE
+		(my_id = #{myId} and friend_id = #{friendId})
+		OR
+		(my_id = #{friendId} and friend_id = #{myId})
+	</delete>
+
+	<select id="getMyFriendList" parameterType="int"
+		resultType="com.neighbus.account.AccountDTO">
+		select
+		id,
+		name,
+		username,
+		province,
+		city,
+		address,
+		phone,
+		image,
+		grade,
+		birth,
+		sex,
+		user_uuid,
+		nickname
+		from
+		users
+		where
+		id in (select friend_id from friends where my_id=#{id})
+		order by
+		name asc
+	</select>
+	
+	<select id="getFriendRequests" parameterType="int" resultType="com.neighbus.account.AccountDTO">
+	    SELECT 
+	        u.id,
+	        u.name,
+	        u.image,
+	        u.user_uuid,
+	        u.nickname as nickname,
+	        u.username as username
+	    FROM 
+	        users u
+	    JOIN 
+	        friend_state fs ON u.id = fs.sender
+	    WHERE 
+	        fs.receiver = #{id} 
+	        AND fs.state = 1
+   </select>
+        
+    <select id="getIdByUuid" parameterType="String" resultType="Integer">
+		select id from users where user_uuid=#{uuid}
+	</select>
+</mapper>

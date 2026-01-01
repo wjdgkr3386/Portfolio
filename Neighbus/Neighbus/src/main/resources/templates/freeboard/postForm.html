@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/css/navibar.css">
+    
+    <title th:if="${post.id == 0}">새 글 작성 - NEIGHBUS</title>
+    <title th:if="${post.id != 0}">게시글 수정 - NEIGHBUS</title>
+
+    <style>
+        /* [Design System] Earth Tone Palette */
+        :root {
+            --primary: #A67C52;
+            --primary-dark: #8D6E63;
+            --bg-ivory: #FFF8F0;
+            --bg-warm: #FFF5EB;
+            --bg-cream: #FAF0E6;
+            --card-bg: #FFFBF7;
+            --text-primary: #5D4037;
+            --text-secondary: #8D6E63;
+            --border-color: #E8D7C3;
+            --white: #FFFFFF;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'SUIT', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            background: linear-gradient(165deg, var(--bg-ivory) 0%, var(--bg-warm) 50%, var(--bg-cream) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            /* 네비바 높이 고려 (navibar.css에 따라 조정 필요) */
+            padding-top: 80px; 
+            padding-bottom: 60px;
+        }
+
+        /* 메인 컨테이너 */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        /* 폼 카드 스타일 */
+        .post-form-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 
+                0 4px 20px rgba(166, 124, 82, 0.08),
+                0 0 0 1px rgba(166, 124, 82, 0.04);
+            animation: fadeInSlideUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 헤더 타이틀 */
+        .form-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            border-bottom: 2px dashed var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+
+        .form-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        /* 폼 요소 스타일 */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 1rem;
+            color: var(--text-primary);
+            background: var(--white);
+            transition: all 0.3s ease;
+            font-family: 'SUIT', sans-serif;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(166, 124, 82, 0.1);
+        }
+
+        .form-control::placeholder {
+            color: #Cbb;
+            opacity: 0.7;
+        }
+
+        /* Select 박스 커스텀 (화살표 아이콘) */
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%238D6E63' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        textarea.form-control {
+            min-height: 300px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        /* 버튼 그룹 */
+        .button-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .btn-custom {
+            padding: 0.8rem 2rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary-custom {
+            background: var(--primary);
+            color: var(--white);
+            box-shadow: 0 4px 15px rgba(166, 124, 82, 0.2);
+        }
+        .btn-primary-custom:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(166, 124, 82, 0.3);
+            color: var(--white);
+        }
+
+        .btn-secondary-custom {
+            background: var(--white);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+        .btn-secondary-custom:hover {
+            background: var(--bg-warm);
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        /* [반응형 미디어 쿼리] */
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            
+            .post-form-card {
+                padding: 1.5rem;
+                border-radius: 20px;
+            }
+
+            .form-title { font-size: 1.5rem; }
+            
+            .button-group {
+                flex-direction: column-reverse; /* 모바일: 취소 버튼이 아래로 */
+                gap: 0.8rem;
+                margin-top: 2rem;
+            }
+            
+            .btn-custom { width: 100%; padding: 0.9rem; }
+        }
+    </style>
+	  
+</head>
+<body>
+	<div th:replace="~{include/navibar :: header-nav}"></div>
+    
+    <div class="container">
+        <div class="post-form-card">
+            
+            <div class="form-header">
+                <h1 class="form-title" th:if="${isEdit != true}">
+                    <i class="bi bi-pencil-square text-primary"></i> 새 글 작성
+                </h1>
+                <h1 class="form-title" th:if="${isEdit == true}">
+                    <i class="bi bi-eraser-fill text-primary"></i> 게시글 수정
+                </h1>
+            </div>
+            
+            <form id="postForm" th:object="${post}" th:action="${isEdit != true} ? @{/freeboard/write} : @{|/freeboard/edit/${post.id}|}" method="post">
+                <input type="hidden" th:field="*{id}" />
+
+				<div class="form-group" th:if="${isEdit != true}">
+			        <label for="clubSelect" class="form-label">동아리 선택</label>
+			        <select id="clubSelect" class="form-control" name="clubId" required>
+			            <option value="">게시글을 작성할 동아리를 선택하세요</option>
+			            <th:block th:each="myClub : ${myClubList}">
+			                <option
+			                    th:value="${myClub.id}"
+			                    th:text="${myClub.clubName}"
+			                    th:selected="${myClub.id == post.clubId}">
+			                </option>
+			            </th:block>
+			        </select>
+			    </div>
+
+				<input type="hidden" th:if="${isEdit == true}" th:field="*{clubId}" />
+					
+                <div class="form-group">
+                    <label for="title" class="form-label">제목</label>
+                    <input type="text" id="title" th:field="*{title}" class="form-control" placeholder="제목을 입력해 주세요" required>
+                </div>
+                
+                <div class="form-group mb-0">
+                    <label for="content" class="form-label">내용</label>
+                    <textarea id="content" th:field="*{content}" class="form-control" placeholder="자유롭게 이야기를 나누어 보세요. (욕설, 비방 등은 제재될 수 있습니다)" required></textarea>
+                </div>
+                
+                <div class="button-group">
+                    <a th:href="@{/freeboard/list}" class="btn-custom btn-secondary-custom">
+                        <i class="bi bi-x-lg"></i> 취소
+                    </a>
+                    <button type="submit" class="btn-custom btn-primary-custom">
+                        <i class="bi bi-check-lg"></i>
+                        <span th:text="${isEdit != true} ? '작성 완료' : '수정 완료'">작성 완료</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+	</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title th:text="${recruitment.title}">모임 상세</title>
+    <meta name="_csrf" th:content="${_csrf.token}" />
+	<meta name="_csrf_header" th:content="${_csrf.headerName}" />
+	<link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css" rel="stylesheet">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+	<link rel="stylesheet" href="/css/navibar.css">
+    <link rel="stylesheet" href="/css/bottom-navbar.css">
+    <link rel="stylesheet" href="/css/custom-modal.css">
+    <script src="/js/custom-modal.js"></script>
+	
+	<style>
+		:root {
+			--primary: #A67C52;
+			--primary-dark: #8D6E63;
+			--primary-light: #C9A88A;
+			--accent-gold: #D4AF87;
+            --accent-red: #C87E7E;
+            --accent-red-dark: #B36A6A;
+			--secondary: #F5DEB3;
+			--secondary-light: #F5E6D3;
+			--secondary-lighter: #FAF0E6;
+			--bg-ivory: #FFF8F0;
+			--bg-warm: #FFF5EB;
+			--bg-cream: #FAF0E6;
+			--card-bg: #FFFBF7;
+			--text-primary: #5D4037;
+			--text-secondary: #8D6E63;
+			--text-light: #A1887F;
+			--border-color: #E8D7C3;
+			--shadow-color: rgba(166, 124, 82, 0.15);
+			--shadow-hover: rgba(166, 124, 82, 0.25);
+			--white: #FFFFFF;
+		}
+
+		body {
+			font-family: 'SUIT', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+			background: linear-gradient(165deg, var(--bg-ivory) 0%, var(--bg-warm) 50%, var(--bg-cream) 100%);
+			color: var(--text-primary);
+			line-height: 1.6;
+			min-height: 100vh;
+			padding-top: 100px;
+			padding-bottom: 60px;
+		}
+
+		.container {
+			max-width: 900px;
+		}
+
+		.detail-header {
+			background: var(--card-bg);
+			border-radius: 24px;
+			padding: 2.5rem;
+			margin-bottom: 1.5rem;
+			box-shadow: 0 4px 16px var(--shadow-color);
+			position: relative;
+		}
+
+		.detail-title {
+			font-size: 2rem;
+			font-weight: 800;
+			color: var(--text-primary);
+			margin-bottom: 1.25rem;
+			line-height: 1.4;
+		}
+
+		.detail-meta {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 1rem;
+			color: var(--text-secondary);
+			font-size: 0.9rem;
+			align-items: center;
+		}
+
+		.meta-item { display: flex; align-items: center; gap: 0.5rem; }
+		.meta-item i { color: var(--primary); font-size: 1rem; }
+		.meta-item strong { color: var(--text-primary); font-weight: 600; }
+		.meta-divider { color: var(--border-color); font-size: 0.75rem; }
+
+		.content-card {
+			background: var(--card-bg);
+			border-radius: 24px;
+			padding: 2rem 2.5rem;
+			margin-bottom: 1.5rem;
+			box-shadow: 0 4px 16px var(--shadow-color);
+		}
+
+		.content-card h2 {
+			font-size: 1.25rem;
+			font-weight: 700;
+			margin-bottom: 1.25rem;
+			padding-bottom: 0.75rem;
+			border-bottom: 2px solid var(--secondary-lighter);
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
+		.content-card h2 i { color: var(--primary); font-size: 1.1rem; }
+		.content-card p { line-height: 1.8; white-space: pre-wrap; font-size: 1rem; }
+
+		#map {
+			width: 100%;
+			height: 350px;
+			border-radius: 16px;
+			margin-top: 1rem;
+			background-color: var(--secondary-lighter);
+		}
+
+		.button-group {
+			display: flex;
+			gap: 0.75rem;
+			margin-top: 1.5rem;
+			padding-top: 1.5rem;
+			border-top: 1px solid var(--border-color);
+		}
+		.button-left { display: flex; gap: 0.75rem; flex: 1; }
+		.button-right { display: flex; gap: 0.75rem; margin-left: auto; }
+
+		.btn {
+			border-radius: 12px;
+			font-weight: 600;
+			padding: 0.6rem 1.25rem;
+			transition: all 0.3s;
+			box-shadow: 0 2px 8px rgba(166, 124, 82, 0.1);
+			font-size: 0.9rem;
+		}
+		.btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(166, 124, 82, 0.2); }
+		.btn-primary { background: var(--primary); border: none; color: white; }
+		.btn-primary:hover { background: var(--primary-dark); color: white; }
+		.btn-danger { background: var(--accent-red); border: none; color: white; }
+		.btn-danger:hover { background: var(--accent-red-dark); color: white; }
+		.btn-secondary { background: var(--white); color: var(--text-primary); border: 2px solid var(--border-color); }
+		.btn-secondary:hover { background: var(--secondary-lighter); border-color: var(--primary); color: var(--primary); }
+
+		.user-count {
+			background: var(--secondary-lighter);
+			color: var(--primary);
+			padding: 0.3rem 0.75rem;
+			border-radius: 12px;
+			font-weight: 700;
+			font-size: 0.9rem;
+		}
+
+		.btn-report {
+			position: absolute;
+			top: 2rem;
+			right: 2rem;
+			width: 45px;
+			height: 45px;
+			background: rgba(255, 255, 255, 0.9);
+			border: 1px solid var(--border-color);
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: var(--accent-red);
+			font-size: 1.1rem;
+			transition: all 0.3s;
+			cursor: pointer;
+			z-index: 10;
+			padding: 0;
+		}
+		.btn-report:hover { background: var(--accent-red); color: var(--white); transform: scale(1.1); }
+
+        /* --- More Modern Report Modal Styles --- */
+        .report-modal .modal-content {
+            background-color: var(--card-bg);
+            border-radius: 24px;
+            border: none;
+            box-shadow: 0 10px 40px rgba(93, 64, 55, 0.2);
+        }
+        .report-modal .modal-header {
+            border-bottom: none;
+            padding: 1.5rem 2rem 0.5rem;
+        }
+        .report-modal .modal-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+        .report-modal .btn-close {
+            filter: none;
+            opacity: 0.7;
+        }
+        .report-modal .modal-body {
+            padding: 1rem 2rem 2rem;
+        }
+        .report-modal .form-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        .report-modal .form-select,
+        .report-modal .form-control {
+            background-color: transparent;
+            border: none;
+            border-bottom: 2px solid var(--border-color);
+            border-radius: 0;
+            padding: 12px 4px;
+            font-weight: 500;
+            box-shadow: none;
+        }
+        .report-modal .form-select:focus,
+        .report-modal .form-control:focus {
+            border-color: var(--primary);
+        }
+        .report-modal .modal-footer {
+            border-top: none;
+            background-color: transparent;
+            padding: 0 2rem 2rem;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .report-modal .modal-footer .btn-primary {
+            background: var(--accent-red);
+            box-shadow: 0 4px 12px rgba(200, 126, 126, 0.3);
+            width: 100%;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+        .report-modal .modal-footer .btn-primary:hover {
+            background: var(--accent-red-dark);
+        }
+        .report-modal .modal-footer .btn-secondary {
+            display: none;
+        }
+
+		@media (max-width: 768px) {
+			body { padding-top: 80px; }
+			.detail-header, .content-card { padding: 1.5rem; }
+			.detail-title { font-size: 1.5rem; }
+			.detail-meta { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+			.meta-divider { display: none; }
+			.button-group, .button-left, .button-right { flex-direction: column; width: 100%; }
+			.btn { width: 100%; justify-content: center; }
+		}
+	</style>
+</head>
+
+<body>
+	<div th:replace="~{include/navibar :: header-nav}"></div>
+
+	<div class="container my-4" th:object="${recruitment}">
+
+		<div id="recruitment-container" th:data-recruitment-id="*{id}" th:data-club-id="*{clubId}">
+
+			<div class="detail-header">
+                <button type="button" class="btn-report"
+                        data-bs-toggle="modal"
+                        data-bs-target="#reportModal"
+                        th:attr="data-report-type='GATHERING', data-report-target-id=${recruitment.id}"
+                        title="모임 신고">
+					<i class="fa-solid fa-flag"></i>
+				</button>
+
+				<h1 class="detail-title" th:text="*{title}">모임 제목이 여기에 표시됩니다</h1>
+
+				<div class="detail-meta">
+					<div class="meta-item">
+						<i class="fa-solid fa-user"></i>
+						<span>작성자 : <strong th:text="*{nickname}"></strong></span>
+					</div>
+					<span class="meta-divider">|</span>
+					<div class="meta-item">
+						<i class="fa-solid fa-calendar-days"></i>
+						<span>모임 날짜: <strong th:text="*{meetingDate}"></strong></span>
+					</div>
+					<span class="meta-divider">|</span>
+					<div class="meta-item">
+						<i class="fa-solid fa-users"></i>
+						<span>인원:
+							<span class="user-count">
+								<span th:text="${currentUserCount}">0</span> / <span th:text="*{maxUser}"></span>
+							</span>
+						</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="content-card">
+				<h2><i class="fa-solid fa-align-left"></i>모임 내용</h2>
+				<p th:text="*{content}">모임 상세 내용이 여기에 표시됩니다.</p>
+			</div>
+
+			<div class="content-card">
+				<h2><i class="fa-solid fa-location-dot"></i>만날 장소</h2>
+				<p th:text="*{address}">만날 장소 주소가 여기에 표시됩니다.</p>
+				<div id="map"></div>
+			</div>
+		</div>
+
+		<div class="button-group">
+			<div class="button-left">
+				<a href="/club/myClubPage" class="btn btn-secondary">
+					<i class="fa-solid fa-list"></i>
+					내가 가입한 동아리
+				</a>
+				
+			</div>
+
+			<div class="button-right">
+				<button th:if="${isJoined == null or isJoined == false}" onclick="joinRecruitment()" class="btn btn-success">
+					<i class="fa-solid fa-user-plus"></i>
+					가입하기
+				</button>
+				<button th:onclick="|openChat('${id}')|" class="btn btn-chat">
+					<i class="fa-solid fa-comments"></i> 채팅하기
+				</button>
+				<a th:unless="${chatRoomExists}" 
+				       href="javascript:void(0);" 
+				       class="btn btn-chat"
+				       th:data-id="${recruitment.id}"
+				       th:data-title="${recruitment.title}"
+				       onclick="createAndEnterChat(this.getAttribute('data-id'), this.getAttribute('data-title'))">
+				        <i class="fa-solid fa-plus"></i> 채팅방 생성
+				    </a>
+				<button th:if="${isJoined == true}" onclick="withdrawalRecruitment()" class="btn btn-warning">
+					<i class="fa-solid fa-user-minus"></i>
+					탈퇴하기
+				</button>
+				<button onclick="deleteRecruitment()" class="btn btn-danger">
+					<i class="fa-solid fa-trash"></i>
+					삭제
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<div th:replace="~{fragments/reportModal :: reportModal}"></div>
+
+    <script th:src="@{'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&callback=initMap'}" async defer></script>
+	<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+	<script th:inline="javascript">
+
+		const headers = {'Content-Type': 'application/json'};
+		const recruitmentId = document.getElementById('recruitment-container').dataset.recruitmentId;
+		const clubId = document.getElementById('recruitment-container').dataset.clubId;
+
+		async function joinRecruitment() {
+            showModal('confirm', '모임 가입', '모임에 가입하시겠습니까?', async () => {
+                try {
+				const response = await fetch('/api/recruitment/join', {
+					method: 'POST',
+					headers: headers,
+					body: JSON.stringify({recruitmentId: recruitmentId})
+				});
+
+				const message = await response.text();
+				showModal(response.ok ? 'success' : 'error', '가입 결과', message, () => {
+                    if (response.ok) {
+					    location.reload();
+				    }
+                });
+			} catch (error) {
+				console.error('Error joining:', error);
+				showModal('error', '오류', '요청 중 오류가 발생했습니다.');
+			}
+            });
+		}
+
+		async function withdrawalRecruitment() {
+			showModal('confirm', '모임 탈퇴', '모임에서 탈퇴하시겠습니까?', async () => {
+                try {
+				const response = await fetch('/api/recruitment/withdrawal', {
+					method: 'DELETE',
+					headers: headers,
+					body: JSON.stringify({recruitmentId: recruitmentId})
+				});
+
+				const message = await response.text();
+				showModal(response.ok ? 'success' : 'error', '탈퇴 결과', message, () => {
+                    if (response.ok) {
+					    location.reload();
+				    }
+                });
+			} catch (error) {
+					console.error('Error withdrawing:', error);
+				showModal('error', '오류', '요청 중 오류가 발생했습니다.');
+			}
+            });
+		}
+
+		async function deleteRecruitment() {
+			showModal('confirm', '모임 삭제', '정말로 이 모임을 삭제하시겠습니까? (작성자만 가능)', async () => {
+                try {
+				const response = await fetch(`/api/recruitment/${recruitmentId}`, {
+					method: 'DELETE',
+					headers: headers
+				});
+
+				const message = await response.text();
+                showModal(response.ok ? 'success' : 'error', '삭제 결과', message, () => {
+				    if (response.ok) {
+					    window.location.href = '/club/' + clubId;
+				    }
+                });
+			} catch (error) {
+				console.error('Error deleting:', error);
+				showModal('error', '오류', '요청 중 오류가 발생했습니다.');
+			}
+            });
+		}
+
+		function openChat(id) {
+			window.open('/chat/room/enter/' + id, '_blank', 'width=850,height=750,resizable=yes');
+		}
+
+		function createAndEnterChat(recruitId, recruitTitle) {
+			var params = new URLSearchParams();
+			params.append("roomId", recruitId);
+			params.append("name", recruitTitle);
+
+			axios.post('/chat/room', params)
+				.then(function (response) {
+					var url = "/chat/room/enter/" + recruitId;
+					window.open(url, "ChatRoom_" + recruitId, "width=500,height=700,scrollbars=yes,resizable=yes");
+				})
+				.catch(function (error) {
+					console.error("채팅방 생성 실패:", error);
+					showModal('error', '채팅방 입장 실패', '채팅방 입장에 실패했습니다. (로그인을 확인해주세요)');
+				});
+		}
+
+		function initMap() {
+			const lat = parseFloat(/*[[${recruitment.latitude}]]*/);
+			const lng = parseFloat(/*[[${recruitment.longitude}]]*/);
+			const placeName = /*[[${recruitment.address}]]*/ '만남의 장소';
+			const mapContainer = document.getElementById('map');
+			
+			if (!isNaN(lat) && !isNaN(lng)) {
+                const location = { lat: lat, lng: lng };
+				const map = new google.maps.Map(mapContainer, {
+					center: location,
+					zoom: 15
+				});
+
+				const marker = new google.maps.Marker({
+					position: location,
+                    map: map,
+                    title: placeName
+				});
+
+                const infowindow = new google.maps.InfoWindow({
+					content: `<div style="padding:5px;font-size:12px;text-align:center;">${placeName}</div>`
+				});
+				infowindow.open(map, marker);
+			} else {
+				mapContainer.innerHTML = '위치 정보가 등록되지 않은 모임입니다.';
+			}
+		};
+
+	</script>
+
+	<!-- Bootstrap JS -->
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="/js/report.js"></script>
+	<div th:replace="~{include/bottom-navbar :: bottom-nav}"></div>
+</body>
+
+</html>

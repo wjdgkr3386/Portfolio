@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="|${club.clubName} - 동아리 홈|"></title>
+    <meta name="_csrf" th:content="${_csrf.token}" />
+	<meta name="_csrf_header" th:content="${_csrf.headerName}" />
+    <link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+	<link rel="stylesheet" href="/css/navibar.css">
+    <link rel="stylesheet" href="/css/bottom-navbar.css">
+    <link rel="stylesheet" href="/css/custom-modal.css">
+    <script src="/js/custom-modal.js"></script>
+		
+    <style>
+        :root {
+            --primary: #A67C52;
+            --primary-dark: #8D6E63;
+            --primary-light: #C9A88A;
+            --accent-red: #C87E7E;
+            --accent-red-dark: #B36A6A;
+            --bg-ivory: #FFF8F0;
+            --bg-warm: #FFF5EB;
+            --bg-cream: #FAF0E6;
+            --card-bg: #FFFBF7;
+            --text-primary: #5D4037;
+            --text-secondary: #8D6E63;
+            --text-light: #A1887F;
+            --border-color: #E8D7C3;
+            --shadow-color: rgba(166, 124, 82, 0.1);
+            --white: #FFFFFF;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'SUIT', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            color: var(--text-primary);
+            background: var(--bg-ivory);
+            line-height: 1.5;
+        }
+
+        .main-wrapper {
+            min-height: 100vh;
+            background: linear-gradient(165deg, var(--bg-ivory) 0%, var(--bg-warm) 50%, var(--bg-cream) 100%);
+            padding: 80px 2rem; /* PC 기본 패딩 */
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .detail-layout {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 2.5rem;
+            align-items: flex-start;
+        }
+
+        .main-content, .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+        .sidebar { position: sticky; top: 100px; }
+
+        .content-card {
+            background: var(--card-bg);
+            border: none;
+            border-radius: 24px;
+            box-shadow: 0 2px 8px rgba(166, 124, 82, 0.08);
+            padding: 2.5rem;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .club-header-card .club-image {
+            width: 100%;
+            height: 350px;
+            object-fit: cover;
+            margin-bottom: 2rem;
+            border-radius: 12px;
+        }
+        .club-header-card .category {
+            display: inline-block;
+            padding: 6px 12px;
+            background: var(--bg-cream);
+            color: var(--primary);
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .club-header-card .title {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1.2;
+            margin-bottom: 1rem;
+            word-break: keep-all;
+        }
+        .club-header-card .description {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            white-space: pre-wrap;
+        }
+
+        .btn-settings {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+            z-index: 10;
+            color: var(--text-secondary);
+        }
+        .btn-settings:hover { background: var(--primary); color: var(--white); transform: rotate(90deg); }
+        
+        .btn-report {
+			position: absolute;
+			top: 2rem;
+			right: 6rem;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--accent-red);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            font-size: 1.1rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+		}
+        .btn-report:hover {
+            background: var(--accent-red);
+            color: var(--white);
+            border-color: var(--accent-red);
+            box-shadow: 0 4px 12px rgba(200, 126, 126, 0.3);
+            transform: scale(1.1);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: auto;
+            flex-wrap: wrap;
+        }
+
+        .calendar-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .card-title { font-size: 1.5rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.75rem; }
+        .card-title i { color: var(--primary); }
+        
+        .btn-mini-create {
+            font-size: 0.85rem; font-weight: 600; padding: 0.4rem 0.8rem;
+            background-color: var(--primary); color: white; border-radius: 20px;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 5px;
+        }
+
+        .calendar-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .calendar-nav-btn { background: none; border: none; font-size: 1rem; padding: 5px; cursor: pointer; color: var(--text-secondary); }
+        #current-month-title { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin: 0; }
+
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .day-label { font-size: 0.8rem; font-weight: 600; color: var(--text-light); padding-bottom: 5px; }
+        .day-label:first-child { color: var(--accent-red); }
+
+        .day-cell {
+            aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center;
+            font-size: 0.95rem; cursor: pointer; border-radius: 50%; color: var(--text-primary);
+        }
+        .day-cell:hover:not(.empty) { background-color: var(--bg-warm); color: var(--primary); font-weight: bold; }
+        .day-cell.selected { background-color: var(--primary) !important; color: var(--white) !important; font-weight: bold; }
+        .day-cell.today { border: 1px solid var(--primary); color: var(--primary); }
+        .day-cell.today.selected { border: none; color: var(--white); }
+        
+        /* 모임 있는 날짜 스타일 (핑크) */
+        .day-cell.has-meeting { 
+            background-color: rgb(128, 64, 0); 
+            color: #fff; 
+            font-weight: bold; 
+        }
+
+        .meeting-list-wrapper { margin-top: 1.5rem; min-height: 100px; border-top: 1px dashed var(--border-color); padding-top: 1rem;}
+        .meeting-item {
+            display: flex; align-items: flex-start; gap: 1rem; padding: 0.8rem;
+            border-radius: 8px; cursor: pointer; border-bottom: 1px solid rgba(0,0,0,0.03);
+            position: relative;
+        }
+        .meeting-item:hover { background-color: var(--bg-cream); }
+        .meeting-item.closed {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: #f5f5f5;
+        }
+        .meeting-item.closed:hover { background-color: #f5f5f5; }
+        .meeting-item.closed .meeting-info h4,
+        .meeting-item.closed .meeting-info p {
+            text-decoration: line-through;
+            color: #999;
+        }
+        .meeting-item.closed::after {
+            content: '마감';
+            position: absolute;
+            top: 50%;
+            right: 1rem;
+            transform: translateY(-50%);
+            background: #B91C1C;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+        .meeting-time { 
+            font-weight: 700; color: var(--primary); font-size: 0.9rem; white-space: nowrap; 
+            background: var(--bg-ivory); padding: 2px 6px; border-radius: 4px;
+        }
+        .meeting-info h4 { margin: 0 0 4px 0; font-size: 0.95rem; font-weight: 600; }
+        .meeting-info p { margin: 0; color: var(--text-secondary); font-size: 0.85rem; display: flex; align-items: center; gap: 5px;}
+        .empty-message { text-align: center; color: var(--text-light); padding: 1rem 0; font-size: 0.9rem;}
+
+        .status-badge-mini {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            border-radius: 10px;
+            margin-left: 6px;
+        }
+        .status-badge-mini.recruiting { background: #D4E2D4; color: #5A8B73; }
+        .status-badge-mini.closed { background: #FEE2E2; color: #B91C1C; }
+
+        .btn-action {
+            display: inline-block; padding: 0.8rem 1.5rem; border: none; font-size: 1rem; font-weight: 700;
+            cursor: pointer; text-align: center; text-decoration: none; border-radius: 8px; width: auto;
+        }
+        .btn-primary-action { background: var(--primary); color: var(--white); }
+        .btn-login-action { background: var(--text-primary); color: var(--white); }
+
+        /* --- Modern Report Modal Styles --- */
+        .report-modal .modal-content { background-color: var(--card-bg); border-radius: 24px; border: 1px solid var(--border-color); box-shadow: 0 10px 40px rgba(93, 64, 55, 0.2); }
+        .report-modal .modal-header { border-bottom: none; padding: 1.5rem 2rem 0.5rem; }
+        .report-modal .modal-title { font-size: 1.5rem; font-weight: 800; color: var(--text-primary); }
+        .report-modal .btn-close { opacity: 0.7; }
+        .report-modal .modal-body { padding: 1rem 2rem 2rem; }
+        .report-modal .form-label { font-weight: 600; color: var(--text-secondary); font-size: 0.9rem; }
+        .report-modal .form-select, .report-modal .form-control { background-color: transparent; border: none; border-bottom: 2px solid var(--border-color); border-radius: 0; padding: 12px 4px; font-weight: 500; box-shadow: none; }
+        .report-modal .form-select:focus, .report-modal .form-control:focus { border-color: var(--primary); }
+        .report-modal .modal-footer { border-top: none; background-color: transparent; padding: 0 2rem 2rem; flex-direction: column; gap: 0.5rem; }
+        .report-modal .modal-footer .btn-primary { background: var(--accent-red); box-shadow: 0 4px 12px rgba(200, 126, 126, 0.3); width: 100%; padding: 14px; font-size: 1rem; font-weight: 700; }
+        .report-modal .modal-footer .btn-primary:hover { background: var(--accent-red-dark); }
+        .report-modal .modal-footer .btn-secondary { display: none; }
+
+        @media (max-width: 992px) {
+            .main-wrapper { padding: 40px 1.5rem; }
+            .detail-layout { grid-template-columns: 1fr; gap: 2rem; }
+            .sidebar { position: static; width: 100%; }
+            .club-header-card .club-image { height: 300px; }
+        }
+
+        @media (max-width: 768px) {
+            .main-wrapper { padding: 20px 1rem; }
+            .content-card { padding: 1.5rem; border-radius: 20px; }
+            
+            .club-header-card .title { font-size: 2rem; margin-bottom: 0.5rem; }
+            .club-header-card .description { font-size: 1rem; margin-bottom: 1.5rem; }
+            .club-header-card .club-image { height: 220px; margin-bottom: 1.5rem; }
+            
+            .btn-settings, .btn-report { width: 40px; height: 40px; top: 1.5rem; font-size: 1rem; }
+            .btn-settings { right: 1.5rem; }
+            .btn-report { right: 4.5rem; }
+            
+            .header-actions { width: 100%; flex-direction: column; }
+            .header-actions div, .header-actions form { width: 100%; }
+            .btn-action { width: 100%; padding: 1rem; }
+
+            .day-cell { font-size: 0.85rem; }
+            .meeting-item { padding: 0.8rem 0.5rem; }
+            
+            .report-modal-content { padding: 1.5rem; }
+            .report-modal-title { font-size: 1.25rem; }
+        }
+    </style>
+</head>
+<body>
+	<div th:replace="~{include/navibar :: header-nav}"></div>
+	
+    <div class="main-wrapper">
+        <div class="container">
+			
+            <div class="detail-layout">
+                <div class="main-content">
+					
+                    <div class="content-card club-header-card">
+                        
+                        <button type="button" class="btn-report"
+                                data-bs-toggle="modal"
+                                data-bs-target="#reportModal"
+                                th:attr="data-report-type='CLUB', data-report-target-id=${club.id}"
+                                title="동아리 신고">
+                            <i class="fa-solid fa-flag"></i>
+                        </button>
+
+                        <a th:if="${isMember}" th:href="@{/club/clubsetting(clubId=${club.id})}" class="btn-settings" title="동아리 설정">
+                            <i class="fa-solid fa-gear"></i>
+                        </a>
+
+                        <img th:if="${club.clubImg != null and !club.clubImg.isEmpty()}" th:src="${club.clubImg}" th:alt="${club.clubName}" class="club-image">
+                        <img th:unless="${club.clubImg != null and !club.clubImg.isEmpty()}" src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800" alt="동아리 기본 이미지" class="club-image">
+                        
+                        <div class="category" th:text="${club.cityName}">지역명</div>
+                        <h1 class="title" th:text="${club.clubName}">동아리 이름</h1>
+                        <p class="description" th:text="${club.clubInfo}">동아리 상세 설명</p>
+
+                        <div class="header-actions">
+                             <div th:if="${isLoggedIn AND !isMember}">
+                                <form th:action="@{/club/join/{id}(id=${club.id})}" method="post">
+                                    <button type="submit" class="btn-action btn-primary-action">
+                                        <i class="fa-solid fa-heart me-2"></i>동아리 가입하기
+                                    </button>
+                                </form>
+                            </div>
+                            <div th:if="${!isLoggedIn}">
+                                <a th:href="@{/login}" class="btn-action btn-login-action">
+                                    <i class="fa-solid fa-user me-2"></i>로그인 후 가입
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar">
+					<div th:replace="~{fragments/weatherWidget :: weatherWidget}"></div>
+                    <div class="content-card calendar-card">
+                        <div class="calendar-card-header">
+                            <h2 class="card-title"><i class="fa-solid fa-calendar-days"></i>모임 일정</h2>
+                            
+                            <a th:if="${isLoggedIn AND isMember}" th:href="@{/recruitment/new(clubId=${club.id})}" class="btn-mini-create">
+                                <i class="fa-solid fa-plus"></i> 모임 생성
+                            </a>
+                        </div>
+                        
+                        <div class="calendar-nav">
+                            <button class="calendar-nav-btn" onclick="changeMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                            <h3 id="current-month-title"></h3>
+                            <button class="calendar-nav-btn" onclick="changeMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+
+                        <div class="calendar-grid" id="calendar-grid">
+                            <div class="day-label">일</div>
+                            <div class="day-label">월</div>
+                            <div class="day-label">화</div>
+                            <div class="day-label">수</div>
+                            <div class="day-label">목</div>
+                            <div class="day-label">금</div>
+                            <div class="day-label">토</div>
+                        </div>
+
+                        <div id="meeting-list" class="meeting-list-wrapper">
+                            <p class="empty-message">날짜를 선택하여 일정을 확인하세요.</p>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div th:replace="~{fragments/reportModal :: reportModal}"></div>
+    </div>
+
+    <script th:inline="javascript">
+        const clubId = /*[[${club.id}]]*/ null;
+        let currentCalendarDate = new Date(); // 현재 보고 있는 달력 날짜
+        let meetingDates = new Set(); // 모임이 있는 날짜들을 저장할 Set
+
+        // 월 변경 함수
+        function changeMonth(step) {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + step);
+            renderCalendar();
+        }
+        
+        // 모임 날짜 데이터 가져오기
+        function fetchMeetingDates() {
+            fetch(`/api/recruitment/dates?clubId=${clubId}`)
+                .then(res => res.json())
+                .then(dates => {
+                    meetingDates = new Set(dates);
+                    renderCalendar(); // 데이터 로드 후 달력 렌더링
+                })
+                .catch(err => console.error("일정 데이터 로드 실패:", err));
+        }
+
+        // 월간 달력 렌더링 함수
+        function renderCalendar() {
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+            
+            // 헤더 업데이트
+            document.getElementById('current-month-title').innerText = `${year}년 ${month + 1}월`;
+
+            // 달력 계산
+            const firstDayOfMonth = new Date(year, month, 1).getDay(); // 이번달 1일의 요일 (0:일 ~ 6:토)
+            const lastDateOfMonth = new Date(year, month + 1, 0).getDate(); // 이번달 마지막 날짜
+            
+            const calendarGrid = document.getElementById('calendar-grid');
+            
+            // 기존 날짜 셀 제거 (요일 헤더는 유지)
+            const existingDays = calendarGrid.querySelectorAll('.day-cell');
+            existingDays.forEach(el => el.remove());
+
+            // 1. 앞쪽 빈칸 채우기
+            for (let i = 0; i < firstDayOfMonth; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'day-cell empty';
+                calendarGrid.appendChild(emptyCell);
+            }
+
+            // 2. 날짜 채우기
+            const today = new Date();
+            for (let day = 1; day <= lastDateOfMonth; day++) {
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const cell = document.createElement('div');
+                cell.className = 'day-cell';
+                cell.innerText = day;
+                
+                // 모임이 있는 날짜 표시 (핑크색)
+                if (meetingDates.has(dateKey)) {
+                    cell.classList.add('has-meeting');
+                }
+                
+                // 오늘 날짜 표시
+                if (today.getFullYear() === year && today.getMonth() === month && today.getDate() === day) {
+                    cell.classList.add('today');
+                    // 페이지 로드 시 오늘 날짜 자동 선택 (선택된 날짜가 없을 때만)
+                    if(!document.querySelector('.day-cell.selected')) {
+                        setTimeout(() => fetchRecruitments(dateKey), 0);
+                        cell.classList.add('selected'); 
+                    }
+                }
+
+                cell.onclick = () => selectDate(cell, dateKey);
+                calendarGrid.appendChild(cell);
+            }
+        }
+
+        function selectDate(element, dateKey) {
+            document.querySelectorAll('.day-cell').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            fetchRecruitments(dateKey);
+        }
+
+        function fetchRecruitments(date) {
+            const listEl = document.getElementById('meeting-list');
+            
+            fetch(`/recruitment/recruitments/api?clubId=${clubId}&date=${date}`)
+                .then(response => response.ok ? response.json() : Promise.reject('통신 오류'))
+                .then(data => renderMeetingList(data, date))
+                .catch(error => {
+                    console.error(error);
+                    listEl.innerHTML = '<p class="empty-message">일정을 불러오지 못했습니다.</p>';
+                });
+        }
+
+        function renderMeetingList(meetings, date) {
+            const listEl = document.getElementById('meeting-list');
+
+            if (!meetings || meetings.length === 0) {
+                listEl.innerHTML = `<p class="empty-message">${date}에 예정된 모임이 없습니다.</p>`;
+                return;
+            }
+
+            let listHtml = meetings.map(m => {
+                const timeStr = m.meetingDate ? new Date(m.meetingDate).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+                const isClosed = m.status !== 'OPEN';
+                const closedClass = isClosed ? 'closed' : '';
+                const clickAction = isClosed ? '' : `onclick="location.href='/recruitment/${m.id}'"`;
+                return `
+                    <div class="meeting-item ${closedClass}" ${clickAction}>
+                        <div class="meeting-time">${timeStr}</div>
+                        <div class="meeting-info">
+                            <h4>${m.title}</h4>
+                            <p><i class="fa-solid fa-location-dot"></i> ${m.address}</p>
+                        </div>
+                    </div>`;
+            }).join('');
+            listEl.innerHTML = listHtml;
+        }
+
+        // 초기 실행: 모임 날짜 데이터를 먼저 가져온 후 달력을 그립니다.
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchMeetingDates();
+        });
+    </script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="/js/report.js"></script>
+	<div th:replace="~{include/bottom-navbar :: bottom-nav}"></div>
+</body>
+</html>

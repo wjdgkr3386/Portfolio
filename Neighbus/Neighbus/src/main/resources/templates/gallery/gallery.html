@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+    <title>갤러리 - 동네친구</title>
+    
+    <link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/css/navibar.css">
+    <link rel="stylesheet" href="/css/bottom-navbar.css">
+
+    <style>
+        :root {
+            --primary: #A67C52;
+            --primary-dark: #8D6E63;
+            --bg-ivory: #FFF8F0;
+            --bg-warm: #FFF5EB;
+            --bg-cream: #FAF0E6;
+            --card-bg: #FFFFFF;
+            --text-primary: #5D4037;
+            --text-secondary: #8D6E63;
+            --border-color: #E8D7C3;
+            --shadow-color: rgba(166, 124, 82, 0.1);
+        }
+
+        body {
+            font-family: 'SUIT', sans-serif;
+            color: var(--text-primary);
+            background: linear-gradient(165deg, var(--bg-ivory) 0%, var(--bg-warm) 50%, var(--bg-cream) 100%);
+            margin: 0;
+            padding-bottom: 80px;
+            min-height: 100vh;
+        }
+
+        .main-wrapper {
+            padding-top: 2rem;
+            min-height: 100vh;
+        }
+
+        .page-header { text-align: center; margin-bottom: 2rem; }
+        .page-title { font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; }
+        .page-subtitle { color: var(--text-secondary); font-size: 1.1rem; }
+
+        .filter-controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 3rem;
+        }
+        .custom-filter-element {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            height: 50px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+        .custom-filter-element:focus, .custom-filter-element:hover {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(166, 124, 82, 0.1), 0 4px 15px var(--shadow-color);
+        }
+        .search-group {
+            flex-grow: 1;
+            max-width: 500px;
+        }
+        .search-group .form-control {
+            border-right: none;
+        }
+        .search-group .btn-search-icon {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-left: none;
+            color: var(--primary);
+            font-size: 1.2rem;
+            padding: 0 1.2rem;
+            border-radius: 0 12px 12px 0;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .gallery-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .card-image-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+            background-color: #f0f0f0;
+        }
+        
+        .card-image { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            display: block;
+        }
+
+        .author-overlay {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.6));
+            padding: 15px 10px 8px;
+            color: white;
+            font-size: 0.8rem;
+            z-index: 1;
+        }
+
+        .card-body { padding: 0.8rem; }
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .btn-write-gallery {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-size: 1.8rem;
+            z-index: 1040;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        .btn-write-gallery:hover {
+            background: var(--primary-dark);
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 991px) {
+            .filter-controls { flex-direction: column; align-items: center; }
+            .filter-controls > div { width: 100%; max-width: 500px; }
+            .search-group { max-width: none; }
+        }
+
+        @media (max-width: 768px) {
+            .page-title { font-size: 1.8rem; }
+            .gallery-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 2px;
+                margin: 0 -15px;
+            }
+            .gallery-card { border-radius: 0; box-shadow: none; }
+            .card-body { display: none; }
+        }
+
+        .pagination { gap: 0.5rem; }
+        .pagination .page-item {
+            margin: 0;
+        }
+        .pagination .page-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            background-color: transparent;
+            color: var(--text-secondary);
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .pagination .page-link:hover {
+            background-color: var(--bg-cream);
+            color: var(--primary);
+        }
+        .page-item.active .page-link {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px var(--shadow-color);
+        }
+        .page-item.disabled .page-link {
+            color: var(--border-color);
+        }
+    </style>
+</head>
+
+<body>
+    <div th:replace="~{include/navibar :: header-nav}"></div>
+
+    <div class="main-wrapper">
+        <div class="container">
+            <div class="page-header">
+                <h1 class="page-title">갤러리</h1>
+                <p class="page-subtitle">우리 동네 이야기</p>
+            </div>
+
+            <form th:action="@{/gallery}" method="get" id="filterForm" class="mb-4">
+                <div class="filter-controls">
+                    <div style="min-width: 200px;">
+                        <select id="clubSelect" name="clubId" class="form-select custom-filter-element" onChange="this.form.submit()">
+                            <option value="0">전체 동아리</option>
+                            <th:block th:each="myClub : ${myClubList}">
+                                <option th:value="${myClub.id}" th:text="${myClub.clubName}"
+                                    th:selected="${myClub.id == galleryDTO.clubId}"></option>
+                            </th:block>
+                        </select>
+                    </div>
+                    <div class="input-group search-group">
+                        <input type="text" id="keywordInput" name="keyword" th:value="${keyword}"
+                            placeholder="제목, 작성자 검색" class="form-control custom-filter-element">
+                        <button type="submit" class="btn btn-search-icon"><i class="bi bi-search"></i></button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="gallery-grid">
+                <a class="gallery-card" th:each="gallery : ${galleryMapList}"
+                    th:href="@{/gallery/detail/{id}(id=${gallery.ID})}">
+                    <div class="card-image-wrapper">
+                        <img th:if="${gallery.IMAGES != null and gallery.IMAGES.size() > 0}"
+                             th:src="${gallery.IMAGES[0].IMG}" alt="이미지" class="card-image">
+                        
+                        <img th:unless="${gallery.IMAGES != null and gallery.IMAGES.size() > 0}" 
+                             src="/img/no-image.png" alt="이미지 없음" class="card-image" style="opacity: 0.5;">
+                        
+                        <div class="author-overlay">
+                            <i class="bi bi-person-fill me-1"></i>
+                            <span th:utext="${gallery.WRITER}">작성자</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title" th:utext="${gallery.TITLE}">제목</h5>
+                    </div>
+                </a>
+            </div>
+
+            <nav th:if="${pagingMap != null and pagingMap.searchCnt > 0}" class="mt-5">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item" th:classappend="${pagingMap.selectPageNo == 1} ? 'disabled'">
+                        <a class="page-link" th:href="@{/gallery(selectPageNo=${pagingMap.selectPageNo - 1}, keyword=${keyword}, clubId=${galleryDTO.clubId})}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item" th:each="page : ${#numbers.sequence(pagingMap.beginPageNo, pagingMap.endPageNo)}"
+                        th:classappend="${page == pagingMap.selectPageNo} ? 'active'">
+                        <a class="page-link" th:href="@{/gallery(selectPageNo=${page}, keyword=${keyword}, clubId=${galleryDTO.clubId})}" th:text="${page}"></a>
+                    </li>
+                    <li class="page-item" th:classappend="${pagingMap.selectPageNo == pagingMap.endPageNo} ? 'disabled'">
+                        <a class="page-link" th:href="@{/gallery(selectPageNo=${pagingMap.selectPageNo + 1}, keyword=${keyword}, clubId=${galleryDTO.clubId})}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <a href="/gallery/write" class="btn-write-gallery">
+        <i class="bi bi-pencil-square"></i>
+    </a>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <div th:replace="~{include/bottom-navbar :: bottom-nav}"></div>
+</body>
+</html>

@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEIGHBUS - 개인정보처리방침</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css" rel="stylesheet">
+	<link rel="stylesheet" href="/css/navibar.css">
+    <style>
+        /* 사용자 지정 CSS 변수 및 기본 스타일 재정의 (홈페이지와 일치) */
+        :root {
+            --primary: #A67C52;
+            --primary-dark: #8D6E63;
+            --primary-light: #C9A88A;
+            --accent-red: #C87E7E;
+            --accent-red-dark: #B36A6A;
+            --bg-ivory: #FFF8F0;
+            --bg-warm: #FFF5EB;
+            --bg-cream: #FAF0E6;
+            --card-bg: #FFFBF7;
+            --text-primary: #5D4037;
+            --text-secondary: #8D6E63;
+            --text-light: #A1887F;
+            --border-color: #E8D7C3;
+            --shadow-color: rgba(166, 124, 82, 0.1);
+            --shadow-hover: rgba(166, 124, 82, 0.2);
+            --white: #FFFFFF;
+        }
+
+        body {
+            font-family: 'SUIT', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            color: var(--text-primary);
+            background: var(--bg-ivory);
+            line-height: 1.8;
+            font-weight: 400;
+        }
+
+        .container-custom {
+            max-width: 1000px; /* 개인정보처리방침 특성상 내용이 길어 중앙 정렬 및 가독성을 위해 너비를 조정 */
+            margin: 0 auto;
+            padding: 0 4rem;
+        }
+        
+        /* -------------------------------------- */
+        /* Policy Specific Styles */
+        /* -------------------------------------- */
+
+        .policy-section {
+            padding: 4rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .policy-header {
+            padding: 6rem 0 3rem;
+            background: linear-gradient(165deg, var(--bg-ivory) 0%, var(--bg-warm) 100%);
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .policy-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+            color: var(--primary-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .policy-update-info {
+            font-size: 1rem;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .policy-heading {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-top: 2rem;
+            margin-bottom: 1.5rem;
+            border-left: 5px solid var(--primary);
+            padding-left: 1rem;
+        }
+
+        .policy-sub-heading {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .policy-content p, 
+        .policy-content li,
+        .policy-content table {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .policy-content ul {
+            padding-left: 1.5rem;
+        }
+        
+        .policy-content li {
+            list-style: disc;
+        }
+        
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+        
+        .table-custom th, .table-custom td {
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            text-align: left;
+        }
+        
+        .table-custom th {
+            background-color: var(--bg-cream);
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .policy-note {
+            background-color: var(--bg-cream);
+            border-left: 4px solid var(--accent-red);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            color: var(--accent-red-dark);
+            font-weight: 500;
+        }
+        
+        
+        
+        /* Tablet & Mobile Responsive */
+        @media (max-width: 991px) {
+            body {
+                padding-bottom: calc(80px + env(safe-area-inset-bottom));
+            }
+
+            .container-custom {
+                padding: 0 2rem;
+            }
+
+            .policy-header {
+                padding: 4rem 0 2.5rem;
+            }
+
+            .policy-title {
+                font-size: 2.8rem;
+            }
+
+            .policy-section {
+                padding: 3rem 0;
+            }
+
+            .policy-heading {
+                font-size: 1.6rem;
+            }
+
+            .policy-sub-heading {
+                font-size: 1.2rem;
+            }
+
+            .table-custom {
+                font-size: 0.9rem;
+            }
+
+            .table-custom th, .table-custom td {
+                padding: 0.75rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding-bottom: calc(90px + env(safe-area-inset-bottom));
+            }
+
+            .container-custom {
+                padding: 0 1.25rem;
+            }
+
+            .policy-header {
+                padding: 3rem 0 2rem;
+            }
+
+            .policy-title {
+                font-size: 2.2rem;
+            }
+
+            .policy-update-info {
+                font-size: 0.9rem;
+            }
+
+            .policy-section {
+                padding: 2.5rem 0;
+            }
+
+            .policy-heading {
+                font-size: 1.4rem;
+                border-left-width: 3px;
+                padding-left: 0.75rem;
+            }
+
+            .policy-sub-heading {
+                font-size: 1.1rem;
+                margin-top: 1.25rem;
+            }
+
+            .policy-content p,
+            .policy-content li,
+            .policy-content table {
+                font-size: 0.95rem;
+                line-height: 1.7;
+            }
+
+            .policy-content ul {
+                padding-left: 1.25rem;
+            }
+
+            .policy-note {
+                padding: 1.25rem;
+                font-size: 0.9rem;
+            }
+
+            .table-custom {
+                font-size: 0.85rem;
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .table-custom th, .table-custom td {
+                padding: 0.65rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .container-custom {
+                padding: 0 1rem;
+            }
+
+            .policy-header {
+                padding: 2.5rem 0 1.75rem;
+            }
+
+            .policy-title {
+                font-size: 1.8rem;
+            }
+
+            .policy-update-info {
+                font-size: 0.85rem;
+            }
+
+            .policy-section {
+                padding: 2rem 0;
+            }
+
+            .policy-heading {
+                font-size: 1.25rem;
+                margin-top: 1.5rem;
+                margin-bottom: 1.25rem;
+            }
+
+            .policy-sub-heading {
+                font-size: 1rem;
+                margin-top: 1rem;
+            }
+
+            .policy-content p,
+            .policy-content li,
+            .policy-content table {
+                font-size: 0.9rem;
+                line-height: 1.65;
+            }
+
+            .policy-note {
+                padding: 1rem;
+                font-size: 0.85rem;
+            }
+
+            .table-custom {
+                font-size: 0.8rem;
+            }
+
+            .table-custom th, .table-custom td {
+                padding: 0.5rem;
+            }
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+	<div th:replace="~{include/navibar :: header-nav}"></div>
+	
+    <div class="policy-header">
+        <div class="container-custom">
+            <h1 class="policy-title">개인정보처리방침</h1>
+            <p class="policy-update-info">본 방침은 2025년부터 시행됩니다.</p>
+        </div>
+    </div>
+
+    <div class="container-custom policy-content">
+        
+        <div class="policy-section">
+            <p><strong>NEIGHBUS</strong> (이하 '회사' 또는 '<strong>NEIGHBUS</strong>'라 함)는 이용자의 개인정보를 소중히 여기며, 「개인정보 보호법」 및 관련 법령을 준수하고 있습니다. 본 처리방침을 통해 이용자가 제공하는 개인정보가 어떠한 용도와 방식으로 이용되고 있으며, 개인정보 보호를 위해 어떠한 조치가 취해지고 있는지 알려드립니다.</p>
+            <p>본 방침은 2025년부터 시행됩니다.</p>
+        </div>
+
+        <div class="policy-section">
+            <h2 class="policy-heading">1. 개인정보의 수집 및 이용 목적</h2>
+            <p>회사는 다음의 목적을 위해 개인정보를 수집 및 이용합니다. 수집하는 개인정보는 다음의 목적 이외의 용도로는 사용되지 않으며, 이용 목적이 변경될 시에는 사전 동의를 구할 예정입니다.</p>
+            <ul>
+                <li><strong>회원 관리:</strong> 회원제 서비스 이용에 따른 본인 확인, 개인 식별, 부정 이용 방지, 비인가 사용 방지, 가입 의사 확인, 연령 확인, 만 14세 미만 아동 개인정보 수집 시 법정대리인 동의 여부 확인, 각종 고지 및 통지.</li>
+                <li><strong>서비스 제공:</strong> 서비스 제공에 관한 계약 이행 및 서비스 제공에 따른 요금 정산, 콘텐츠 제공, 구매 및 요금 결제, 물품 배송 또는 청구서 등 발송, 금융거래 본인 인증 및 금융 서비스.</li>
+                <li><strong>마케팅 및 광고에 활용:</strong> 신규 서비스 개발 및 맞춤 서비스 제공, 이벤트 및 광고성 정보 제공 및 참여 기회 제공, 접속 빈도 파악 또는 회원의 서비스 이용에 대한 통계.</li>
+            </ul>
+        </div>
+
+        <div class="policy-section">
+            <h2 class="policy-heading">2. 수집하는 개인정보 항목 및 수집 방법</h2>
+            <p>회사는 서비스 제공을 위해 최소한의 개인정보를 수집하고 있으며, 이용자의 동의를 받아 아래와 같은 개인정보 항목을 수집하고 있습니다.</p>
+            
+            <h3 class="policy-sub-heading">수집 항목</h3>
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>구분</th>
+                        <th>수집 항목</th>
+                        <th>수집 목적</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>필수 항목</strong> (회원가입 시)</td>
+                        <td>성명, 아이디, 비밀번호, 이메일 주소, 연락처(휴대전화번호)</td>
+                        <td>회원 관리, 서비스 제공</td>
+                    </tr>
+                    <tr>
+                        <td>선택 항목</td>
+                        <td>주소, 생년월일, 성별 등</td>
+                        <td>맞춤형 서비스 제공, 이벤트 참여</td>
+                    </tr>
+                    <tr>
+                        <td>서비스 이용 과정에서 자동 수집될 수 있는 항목</td>
+                        <td>서비스 이용 기록, 접속 로그, 쿠키, 접속 IP 정보, 결제 기록</td>
+                        <td>서비스 품질 개선, 통계 분석</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 class="policy-sub-heading">수집 방법</h3>
+            <ul>
+                <li>홈페이지(회원가입, 게시판, 상담 신청 등)</li>
+                <li>서면 양식, 팩스, 전화, 이메일을 통한 수집</li>
+                <li>협력 회사로부터의 제공 (제휴 서비스 이용 시)</li>
+                <li>생성 정보 수집 툴을 통한 자동 수집</li>
+            </ul>
+        </div>
+
+        <div class="policy-section">
+            <h2 class="policy-heading">3. 개인정보의 보유 및 이용 기간</h2>
+            <p>회사는 법령에 따른 개인정보 보유 및 이용 기간 또는 정보주체로부터 개인정보를 수집 시에 동의 받은 개인정보 보유 및 이용 기간 내에서 개인정보를 처리 및 보유합니다.</p>
+            <ul>
+                <li>회원 가입 및 관리 정보: 회원 탈퇴 시까지.</li>
+                <li>계약 및 청약철회 등에 관한 기록: 5년 (전자상거래 등에서의 소비자 보호에 관한 법률)</li>
+                <li>대금결제 및 재화 등의 공급에 관한 기록: 5년 (전자상거래 등에서의 소비자 보호에 관한 법률)</li>
+                <li>소비자의 불만 또는 분쟁 처리에 관한 기록: 3년 (전자상거래 등에서의 소비자 보호에 관한 법률)</li>
+            </ul>
+        </div>
+
+        <div class="policy-section">
+            <h2 class="policy-heading">4. 개인정보의 제3자 제공에 관한 사항</h2>
+            <p>회사는 이용자의 개인정보를 <strong>원칙적으로 외부에 제공하지 않습니다.</strong> 다만, 아래의 경우에는 예외로 합니다.</p>
+            <ul>
+                <li>이용자들이 사전에 동의한 경우</li>
+                <li>법령의 규정에 의거하거나, 수사 목적으로 법령에 정해진 절차와 방법에 따라 수사기관의 요구가 있는 경우</li>
+            </ul>
+            <div class="policy-note">
+                <p><strong>[필수 수정 사항]</strong> 만약 서비스 운영상 제3자에게 개인정보를 제공하는 경우가 있다면, 제공받는 자, 제공 목적, 제공 항목, 보유 및 이용 기간을 명확히 기재해야 합니다. (예: 배송 업체, 결제 대행사)</p>
+            </div>
+        </div>
+        
+        <div class="policy-section">
+            <h2 class="policy-heading">5. 정보주체와 법정대리인의 권리 및 그 행사 방법</h2>
+            <p>정보주체(만 14세 미만인 경우에는 법정대리인)는 언제든지 등록되어 있는 자신의 개인정보를 조회하거나 수정할 수 있으며, 가입 해지(동의 철회)를 요청할 수도 있습니다.</p>
+            <ul>
+                <li><strong>개인정보 열람, 정정·삭제, 처리정지 요청:</strong> 개인정보 보호책임자 또는 담당 부서에 서면, 전화, 이메일 등을 통해 요청할 수 있습니다.</li>
+                <li><strong>회원 탈퇴:</strong> 홈페이지의 '마이페이지' 또는 '회원탈퇴' 메뉴를 통해 본인 확인 절차를 거친 후 직접 탈퇴가 가능합니다.</li>
+            </ul>
+            <p>요청이 있을 경우 지체 없이 조치하겠습니다.</p>
+        </div>
+        
+        <div class="policy-section">
+            <h2 class="policy-heading">6. 개인정보 자동 수집 장치의 설치·운영 및 그 거부에 관한 사항</h2>
+            <p>회사는 개인화되고 맞춤화된 서비스를 제공하기 위해 이용자의 정보를 저장하고 수시로 불러오는 <strong>'쿠키(Cookie)'</strong>를 사용합니다.</p>
+            <ul>
+                <li><strong>쿠키 사용 목적:</strong> 이용자가 방문한 각 서비스와 웹 사이트들에 대한 방문 및 이용 형태, 인기 검색어, 보안접속 여부 등을 파악하여 이용자에게 최적화된 정보 제공을 위해 사용됩니다.</li>
+                <li><strong>쿠키 설치/거부 방법:</strong> 이용자는 웹 브라우저의 옵션 설정을 통해 쿠키 허용, 쿠키 제한 또는 모든 쿠키의 저장을 거부할 수 있습니다. (설정 경로: <strong>[예시: Internet Explorer 기준]</strong> 웹 브라우저 상단 도구 > 인터넷 옵션 > 개인정보)</li>
+            </ul>
+        </div>
+        
+        <div class="policy-section">
+            <h2 class="policy-heading">7. 개인정보 보호책임자 및 담당 부서 연락처</h2>
+            <p>회사는 개인정보 처리에 관한 업무를 총괄하고, 개인정보 처리와 관련한 정보주체의 불만 처리 및 피해 구제 등을 위하여 아래와 같이 개인정보 보호책임자를 지정하고 있습니다.</p>
+            
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>구분</th>
+                        <th>성명</th>
+                        <th>직책</th>
+                        <th>연락처</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>개인정보 보호책임자</strong></td>
+                        <td><strong>김정학</strong></td>
+                        <td><strong>팀장</strong></td>
+                        <td>전화 : <strong>041-402-1212</strong><br>이메일 : <strong>U1university.u1.ac.kr</strong></td>
+                    </tr>
+                    <tr>
+                        <td>개인정보 보호 담당 부서</td>
+                        <td><strong>KDT 2조</strong></td>
+                        <td><strong>KDT</strong></td>
+                        <td>전화 : <strong>041-402-1212</strong><br>이메일 : <strong>U1university.u1.ac.kr</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="policy-section" style="border-bottom: none;">
+            <h2 class="policy-heading">8. 개인정보 처리방침 변경에 관한 사항</h2>
+            <p>이 개인정보처리방침은 시행일로부터 적용되며, 법령 및 방침에 따른 변경 내용의 추가, 삭제 및 정정이 있는 경우에는 변경사항의 시행 7일 전부터 웹사이트 공지사항을 통하여 고지할 것입니다. 다만, 개인정보의 수집 및 활용, 제3자 제공 등과 같이 이용자 권리의 중요한 변경이 있을 경우에는 <strong>최소 30일 전</strong>에 고지합니다.</p>
+        </div>
+        
+        <div style="text-align: right; padding-bottom: 5rem;">
+            <p><strong>부칙</strong></p>
+            <p>본 방침은 2025년부터 시행됩니다.</p>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+	<div th:replace="~{include/bottom-navbar :: bottom-nav}"></div>
+</body>
+
+</html>

@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:fragment="layout(pageTitle, activeMenu, content)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle} ?: '관리자 페이지'"></title>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/custom-modal.css">
+    <style>
+        :root {
+            --primary: #A67C52;
+            --primary-dark: #8D6E63;
+            --primary-light: #C9A88A;
+            --sidebar-bg: #F5F1EC; /* Slightly darker than card-bg */
+            --body-bg: #FAF6F1; /* Lighter than sidebar */
+            --card-bg: #FFFBF7;
+            --text-primary: #5D4037;
+            --text-secondary: #8D6E63;
+            --text-light: #A1887F;
+            --border-color: #E8D7C3;
+            --shadow-color: rgba(166, 124, 82, 0.1);
+            --white: #FFFFFF;
+
+            /* New Accent Colors */
+            --accent-blue: #81A1C1;
+            --accent-green: #A3BE8C;
+            --accent-red: #BF616A;
+            --accent-yellow: #EBCB8B;
+            --accent-purple: #B48EAD;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            color: var(--text-primary);
+            background-color: var(--body-bg);
+        }
+
+        .admin-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 3rem;
+            padding-left: 0.5rem;
+        }
+        .sidebar-header .logo-icon {
+            font-size: 1.8rem;
+            color: var(--primary);
+        }
+        .sidebar-header .logo-text {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+        .sidebar-header .logo-text span {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .nav-menu { list-style: none; }
+        .nav-item { margin-bottom: 0.5rem; }
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem 1rem;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .nav-link i {
+            width: 30px;
+            font-size: 1.1rem;
+            margin-right: 0.75rem;
+            text-align: center;
+        }
+        .nav-link:hover {
+            background-color: var(--bg-ivory);
+            color: var(--text-primary);
+        }
+        .nav-link.active {
+            background-color: var(--primary);
+            color: var(--white);
+            box-shadow: 0 4px 15px rgba(166, 124, 82, 0.3);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex-grow: 1;
+            padding: 3rem;
+            overflow-y: auto;
+        }
+        .page-header { margin-bottom: 2rem; }
+        .page-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        .page-header p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        /* Common content styles */
+        .content-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 5px 20px var(--shadow-color);
+            padding: 2rem;
+            border-radius: 12px;
+        }
+
+        /* Stat Cards */
+        .stat-cards-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+        .stat-card {
+            flex: 1;
+            min-width: 220px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px var(--shadow-color);
+        }
+        .stat-card .icon {
+            font-size: 2.5rem;
+            color: var(--primary-light);
+        }
+        .stat-card .info .title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+        .stat-card .info .value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+        .data-table thead {
+            background-color: var(--sidebar-bg);
+        }
+        .data-table th, .data-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .data-table th {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .data-table tbody tr:hover {
+            background-color: var(--body-bg);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(93, 64, 55, 0.5);
+            animation: fadeIn 0.3s ease-out;
+        }
+        .modal-content {
+            background-color: var(--card-bg);
+            margin: 5% auto;
+            padding: 0;
+            border: 1px solid var(--border-color);
+            width: 90%;
+            max-width: 700px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .modal-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .close-button {
+            color: var(--text-light);
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+        .close-button:hover { color: var(--text-primary); }
+
+        .modal-body {
+            padding: 2rem;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        .modal-footer {
+            padding: 1.5rem 2rem;
+            background-color: var(--sidebar-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+        
+        /* --- Improved Button Styles --- */
+        .btn {
+            border-radius: 8px;
+            font-weight: 600;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.2rem;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--white);
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+        .btn-secondary {
+            background-color: var(--sidebar-bg);
+            color: var(--text-secondary);
+            border-color: var(--border-color);
+        }
+        .btn-secondary:hover {
+            background-color: var(--border-color);
+            color: var(--text-primary);
+        }
+        .btn-danger {
+            background-color: var(--accent-red);
+            color: var(--white);
+        }
+        .btn-danger:hover {
+            background-color: #9e4f59; /* Darker red */
+        }
+        .btn-icon {
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            gap: 0;
+            font-size: 1rem;
+        }
+        .btn-modal {
+            font-size: 1rem;
+        }
+
+        /* --- Improved Dashboard/Content Grid --- */
+        .dashboard-grid {
+            margin-top: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .dashboard-grid .content-panel {
+            height: 100%;
+        }
+
+        .dashboard-grid canvas {
+            max-height: 350px;
+        }
+        .content-panel canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* --- Improved Table Alignment --- */
+        .data-table th, .data-table td {
+            vertical-align: middle;
+        }
+        .data-table td:first-child, .data-table th:first-child {
+            text-align: center;
+        }
+		.data-table .actions {
+			text-align: center;
+		    white-space: nowrap;
+		}
+		.data-table td.actions {
+			text-align: right !important;
+		}
+		.data-table .actions button,
+		.data-table .actions form {
+		    display: inline-block;
+		    margin: 0 2px;
+		    vertical-align: middle; 
+		}
+
+        /* --- Improved Modal Styles --- */
+        .modal-header {
+            background-color: var(--sidebar-bg);
+        }
+        .modal-footer {
+            background-color: var(--sidebar-bg);
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 130px 1fr;
+            gap: 1rem 1.5rem;
+            align-items: start;
+        }
+        .detail-grid strong {
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-align: right;
+        }
+        .detail-grid span, .detail-grid p {
+            color: var(--text-primary);
+            background: var(--body-bg);
+            padding: 0.6rem 0.8rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin: 0;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* --- Search Controls --- */
+        .search-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .search-controls input[type="text"],
+        .search-controls select,
+        .form-control {
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            color: var(--text-primary);
+            background-color: var(--white);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .search-controls input[type="text"] {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .search-controls select {
+            min-width: 180px;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23A67C52' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 12px;
+            padding-right: 2.5rem;
+            appearance: none;
+        }
+
+        .search-controls input[type="text"]:focus,
+        .search-controls select:focus,
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(166, 124, 82, 0.1);
+        }
+
+        .search-controls input[type="text"]::placeholder {
+            color: var(--text-light);
+        }
+
+        .search-controls input[type="text"]:hover,
+        .search-controls select:hover {
+            border-color: var(--primary-light);
+        }
+
+        /* --- Responsive adjustments --- */
+        @media (max-width: 1200px) {
+            .stat-cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 992px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            .admin-wrapper {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                padding: 1rem 1.5rem;
+            }
+            .sidebar-header { margin-bottom: 0; }
+            .nav-menu { display: none; } /* Simple solution for now, could be a dropdown */
+        }
+        @media (max-width: 768px) {
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+            .detail-grid strong {
+                text-align: left;
+                margin-bottom: -0.5rem;
+            }
+        }
+        @media (max-width: 576px) {
+            .stat-cards-grid {
+                grid-template-columns: 1fr;
+            }
+            .main-content {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+    <style>
+        /* --- Custom Pagination Theme (Ivory & Brown) --- */
+        .pagination {
+            --pg-ivory: #FDFBF5; /* A soft ivory */
+            --pg-brown: #795548; /* A readable, classic brown */
+            --pg-brown-light: #A1887F; /* A lighter brown for hover text */
+            --pg-border: #E8D7C3;
+            
+            gap: 0.5rem;
+        }
+        .pagination .page-link {
+            background-color: var(--white);
+            border: 1px solid var(--pg-border);
+            color: var(--pg-brown);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(121, 85, 72, 0.05);
+        }
+        .pagination .page-link:hover {
+            background-color: var(--pg-ivory);
+            border-color: var(--pg-brown-light);
+            color: var(--pg-brown);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(121, 85, 72, 0.1);
+        }
+        .pagination .page-item.active .page-link {
+            background-color: var(--pg-brown);
+            border-color: var(--pg-brown);
+            color: var(--white);
+            box-shadow: 0 4px 15px rgba(121, 85, 72, 0.2);
+        }
+        .pagination .page-item.disabled .page-link {
+            background-color: var(--sidebar-bg);
+            border-color: var(--pg-border);
+            color: var(--text-light);
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fa-solid fa-bus-simple logo-icon"></i>
+                <a th:href="@{/}" class="logo-text" style="text-decoration: none; color: inherit;">NEIGHBUS <span>Admin</span></a>
+            </div>
+            <nav class="nav-menu">
+                <li class="nav-item">
+                    <a th:href="@{/admin}" class="nav-link" th:classappend="${#strings.equals(activeMenu, 'dashboard')} ? 'active'">
+                        <i class="fa-solid fa-chart-pie"></i> 대시보드
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/users}" class="nav-link" th:classappend="${#strings.equals(activeMenu, 'users')} ? 'active'">
+                        <i class="fa-solid fa-users"></i> 회원 관리
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/clubs}" class="nav-link" th:classappend="${#strings.equals(activeMenu, 'clubs')} ? 'active'">
+                        <i class="fa-solid fa-people-group"></i> 동아리 관리
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/gatherings}" class="nav-link" th:classappend="${#strings.equals(activeMenu, 'gatherings')} ? 'active'">
+                        <i class="fa-solid fa-calendar-check"></i> 모임 관리
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/posts}" class="nav-link" th:classappend="${#strings.equals(activeMenu, 'posts')} ? 'active'">
+                        <i class="fa-solid fa-file-lines"></i> 게시글 관리
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/galleries}" class="nav-link" th:classappend="${#strings.equals(activeMenu, 'galleries')} ? 'active'">
+                        <i class="fa-solid fa-image"></i> 갤러리 관리
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/notice}" class="nav-link" th:classappend="${#strings.equals(activeMenu, 'notice')} ? 'active'">
+                        <i class="fa-solid fa-bullhorn"></i> 공지사항 관리
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/reports}" class="nav-link" th:classappend="${#strings.equals(activeMenu, 'reports')} ? 'active'">
+                        <i class="fa-solid fa-triangle-exclamation"></i> 신고 관리
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/inquiries}" class="nav-link" th:classappend="${#strings.equals(activeMenu, 'inquiries')} ? 'active'">
+                        <i class="fa-solid fa-circle-question"></i> 문의 관리
+                    </a>
+                </li>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div th:replace="${content}">
+                <!-- This content will be replaced by each specific admin page -->
+                <div class="page-header">
+                    <h1>페이지 제목</h1>
+                    <p>페이지 설명</p>
+                </div>
+                <div class="content-panel">
+                    <p>콘텐츠가 여기에 표시됩니다.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="/js/custom-modal.js"></script>
+</body>
+</html>

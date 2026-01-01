@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.neighbus.alarm.NotificationMapper">
+
+	<insert id="save" parameterType="com.neighbus.alarm.NotificationDTO">
+		INSERT INTO notification (
+		users_id, notification_type, content, url, is_read, created_at
+		) VALUES (
+		#{usersId}, #{notificationType}, #{content}, #{url}, 0, NOW()
+		)
+	</insert>
+
+	<select id="findUnreadNotifications"
+		resultType="com.neighbus.alarm.NotificationDTO">
+		SELECT
+		id,
+		users_id AS usersId,
+		notification_type AS notificationType,
+		content,
+		url,
+		is_read AS isRead,
+		created_at AS createdAt
+		FROM notification
+		WHERE users_id = #{usersId} AND is_read = 0
+		ORDER BY created_at DESC
+	</select>
+
+	<select id="countUnread" parameterType="int" resultType="int">
+		SELECT COUNT(*)
+		FROM notification
+		WHERE users_id = #{usersId}
+		AND is_read = 0
+	</select>
+
+	<select id="selectMyNotifications" parameterType="int"
+		resultType="com.neighbus.alarm.NotificationDTO">
+		SELECT * FROM notification
+		WHERE users_id = #{usersId}
+		ORDER BY created_at DESC
+	</select>
+	<delete id="deleteNotification" parameterType="int">
+		DELETE FROM notification WHERE id = #{id}
+	</delete>
+
+	<!-- ★ 전체 알림 삭제 추가 -->
+	<delete id="deleteAllNotifications">
+		DELETE FROM notification WHERE users_id = #{userId}
+	</delete>
+
+</mapper>

@@ -1,0 +1,123 @@
+########################################
+# OS / 공통
+########################################
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+*.swp
+*.swo
+*.bak
+*.tmp
+
+########################################
+# IDE / Editor
+########################################
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Eclipse / STS
+.classpath
+.project
+.settings/
+.factorypath
+.springBeans
+.sts4-cache
+.apt_generated
+
+# VS Code
+.vscode/
+
+########################################
+# Java / Gradle / Maven
+########################################
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Maven
+target/
+
+# Common build dirs
+out/
+bin/
+tmp/
+temp/
+obj/
+.cache/
+logs/
+*.log
+*.out
+*.err
+*.pid
+
+# Bytecode
+*.class
+
+# Package artifacts
+*.jar
+*.war
+*.ear
+
+########################################
+# Node.js / Front-End
+########################################
+node_modules/
+dist/
+coverage/
+.next/
+.nuxt/
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+
+########################################
+# Spring Boot Config
+########################################
+.env
+.env.*
+!.env.example
+
+application.properties
+# application.yml
+static/img/**
+########################################
+# Database / Backup files
+########################################
+*.sqlite
+*.db
+*.sql
+*.bak
+*.backup
+
+########################################
+# Flutter / Dart (Optional)
+########################################
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+android/.gradle/
+android/app/build/
+ios/Flutter/Flutter.framework/
+ios/Pods/
+ios/Runner.xcworkspace/
+ios/Runner/GeneratedPluginRegistrant.*
+<<<<<<< HEAD
+/.metadata
+=======
+/.metadata/
+>>>>>>> 9e296dbd4298d49956d011b870d7e899f0cd8c77

@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>NEIGHBUS - 함께 성장하는 커뮤니티</title>
+
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+	<link rel="preconnect" href="https://cdn.jsdelivr.net">
+	<link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css" rel="stylesheet">
+	<link rel="stylesheet" href="/css/navibar.css">
+	<link rel="stylesheet" href="/css/footer.css">
+	<link rel="stylesheet" href="/css/bottom-navbar.css">
+
+	<script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		:root {
+			--primary: #A67C52;
+			--primary-dark: #8D6E63;
+			--primary-light: #C9A88A;
+			--bg-ivory: #FFF8F0;
+			--bg-warm: #FFF5EB;
+			--bg-cream: #FAF0E6;
+			--card-bg: #FFFBF7;
+			--text-primary: #5D4037;
+			--text-secondary: #8D6E63;
+			--text-light: #A1887F;
+			--border-color: #E8D7C3;
+			--shadow-color: rgba(166, 124, 82, 0.1);
+			--shadow-hover: rgba(166, 124, 82, 0.2);
+			--white: #FFFFFF;
+		}
+
+		html {
+			scroll-behavior: smooth;
+		}
+
+		body {
+			font-family: 'SUIT', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+			color: var(--text-primary);
+			background: linear-gradient(165deg, var(--bg-ivory) 0%, var(--bg-warm) 50%, var(--bg-cream) 100%);
+			line-height: 1.6;
+			overflow-x: hidden;
+			font-weight: 400;
+		}
+
+		/* Hero Section */
+		.hero {
+			min-height: 92vh;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			position: relative;
+			overflow: hidden;
+			padding: 5rem 0;
+		}
+
+		#particles-js {
+			position: absolute;
+			width: 100%;
+			height: 100%;
+			top: 0;
+			left: 0;
+			z-index: 1;
+		}
+
+		.hero-content {
+			max-width: 1400px;
+			width: 100%;
+			padding: 0 4rem;
+			position: relative;
+			z-index: 2;
+			text-align: center;
+			pointer-events: none;
+		}
+
+		.hero-content a {
+			pointer-events: auto;
+		}
+
+		.hero-title {
+			font-size: 5rem;
+			/* PC 사이즈 약간 축소 */
+			font-weight: 800;
+			line-height: 1.1;
+			letter-spacing: -0.03em;
+			margin-bottom: 2rem;
+			color: var(--text-primary);
+			word-break: keep-all;
+			/* 단어 단위 줄바꿈 */
+		}
+
+		.hero-description {
+			font-size: 1.25rem;
+			line-height: 1.7;
+			color: var(--text-secondary);
+			max-width: 600px;
+			margin: 0 auto 3rem;
+			font-weight: 400;
+			word-break: keep-all;
+		}
+
+		.btn-large {
+			padding: 1rem 2.5rem;
+			font-size: 1rem;
+			font-weight: 600;
+			border: 2px solid var(--primary);
+			background: var(--primary);
+			color: var(--white);
+			text-decoration: none;
+			display: inline-block;
+			transition: all 0.3s ease;
+			border-radius: 8px;
+		}
+
+		.btn-large:hover {
+			background: var(--primary-dark);
+			border-color: var(--primary-dark);
+			color: var(--white);
+			transform: translateY(-2px);
+		}
+
+		/* 섹션 공통 */
+		section {
+			padding: 4rem 0;
+		}
+
+		.section-primary-dark-bg {
+			background: var(--primary-dark);
+			color: var(--white);
+		}
+
+		.section-cream {
+			background: var(--bg-cream);
+		}
+
+		.container-custom {
+			max-width: 1400px;
+			margin: 0 auto;
+			padding: 0 4rem;
+		}
+
+		.section-header {
+			margin-bottom: 3rem;
+			text-align: center;
+		}
+
+		.section-label {
+			font-size: 1.5rem;
+			font-weight: 700;
+			letter-spacing: 0.2em;
+			text-transform: uppercase;
+			color: var(--primary);
+			margin-bottom: 0.5rem;
+		}
+
+		.section-primary-dark-bg .section-label {
+			color: var(--primary-light);
+		}
+
+		.section-description {
+			font-size: 1.5rem;
+			line-height: 1.6;
+			color: var(--text-secondary);
+			max-width: 700px;
+			font-weight: 400;
+			margin: 0 auto;
+			word-break: keep-all;
+		}
+
+		.section-primary-dark-bg .section-description {
+			color: var(--bg-cream);
+		}
+
+		/* Stats */
+		.stats-grid {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 1px;
+			margin-top: 3rem;
+			background: rgba(255, 255, 255, 0.1);
+			border-radius: 12px;
+			overflow: hidden;
+		}
+
+		.stat-item {
+			padding: 3rem 1.5rem;
+			text-align: center;
+			transition: all 0.3s ease;
+			background: var(--primary-dark);
+		}
+
+		.stat-item:hover {
+			background: var(--text-primary);
+		}
+
+		.stat-number {
+			font-size: 3.5rem;
+			font-weight: 800;
+			line-height: 1;
+			margin-bottom: 0.5rem;
+			color: var(--white);
+		}
+
+		.stat-label {
+			font-size: 0.9rem;
+			font-weight: 600;
+			color: var(--primary-light);
+			text-transform: uppercase;
+			letter-spacing: 0.1em;
+			margin-bottom: 0.5rem;
+		}
+
+		.stat-description {
+			font-size: 0.85rem;
+			color: var(--bg-cream);
+			line-height: 1.6;
+		}
+
+		/* Filter Section */
+		.filter-section {
+			padding: 2rem 0;
+		}
+
+		.filter-container {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 1rem;
+			padding: 1.5rem;
+			background: var(--card-bg);
+			border: 1px solid var(--border-color);
+			border-radius: 12px;
+			box-shadow: 0 5px 15px var(--shadow-color);
+			flex-wrap: wrap;
+			/* 모바일 대응 */
+		}
+
+		.filter-label {
+			font-size: 0.85rem;
+			font-weight: 700;
+			letter-spacing: 0.05em;
+			text-transform: uppercase;
+			color: var(--text-primary);
+			white-space: nowrap;
+		}
+
+		.form-select-custom {
+			border: 1px solid var(--border-color);
+			padding: 0.6rem 1rem;
+			font-size: 0.9rem;
+			font-weight: 500;
+			background: var(--white);
+			min-width: 140px;
+			transition: all 0.2s ease;
+			border-radius: 8px;
+		}
+
+		/* Card Styles */
+		.card-item {
+			background: var(--card-bg);
+			border: 1px solid var(--border-color);
+			border-radius: 12px;
+			overflow: hidden;
+			transition: all 0.4s ease;
+			cursor: pointer;
+			position: relative;
+			box-shadow: 0 3px 12px var(--shadow-color);
+			display: flex;
+			flex-direction: column;
+			height: 100%;
+		}
+
+		.card-item:hover {
+			transform: translateY(-5px);
+			box-shadow: 0 6px 18px var(--shadow-hover);
+		}
+
+		.card-image {
+			width: 100%;
+			height: 180px;
+			object-fit: cover;
+			transition: transform 0.4s ease;
+		}
+
+		.card-item:hover .card-image {
+			transform: scale(1.05);
+		}
+
+		.card-content {
+			padding: 1.25rem;
+			flex-grow: 1;
+			display: flex;
+			flex-direction: column;
+		}
+
+		.card-title {
+			font-size: 1.1rem;
+			font-weight: 700;
+			line-height: 1.3;
+			margin-bottom: 0.5rem;
+			color: var(--text-primary);
+			display: -webkit-box;
+			-webkit-line-clamp: 1;
+			-webkit-box-orient: vertical;
+			overflow: hidden;
+		}
+
+		.card-meta {
+			display: flex;
+			align-items: center;
+			gap: 0.8rem;
+			font-size: 0.85rem;
+			color: var(--text-light);
+			margin-top: auto;
+		}
+
+		.card-meta i {
+			margin-right: 0.2rem;
+			color: var(--primary);
+		}
+
+		/* Animation & Chatbot */
+		.fade-in {
+			opacity: 0;
+			transform: translateY(30px);
+			transition: all 0.8s ease;
+		}
+
+		.fade-in.visible {
+			opacity: 1;
+			transform: translateY(0);
+		}
+
+		.chatbot-btn {
+			position: fixed;
+			width: 55px;
+			height: 55px;
+			bottom: 25px;
+			right: 25px;
+			z-index: 1030;
+			font-size: 1.5rem;
+			transition: transform 0.3s ease;
+			background-color: var(--primary-dark);
+			border-color: var(--primary-dark);
+		}
+
+		.chatbot-btn:hover {
+			transform: scale(1.1);
+		}
+
+		.chat-widget-container {
+			position: fixed;
+			bottom: 25px;
+			right: 25px;
+			z-index: 1030;
+			display: flex;
+			align-items: flex-end;
+		}
+
+		.chat-window {
+			width: 350px;
+			height: 70vh;
+			max-height: 600px;
+			background-color: var(--card-bg);
+			border-radius: 16px;
+			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+			border: 1px solid var(--border-color);
+			display: none;
+			flex-direction: column;
+			margin-right: 15px;
+			margin-bottom: 70px;
+			/* 버튼 위로 올라오게 */
+			opacity: 0;
+			transform: translateY(20px);
+			transition: opacity 0.3s ease, transform 0.3s ease;
+		}
+
+		.chat-window.show {
+			display: flex;
+			opacity: 1;
+			transform: translateY(0);
+		}
+
+		.chat-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 0.75rem 1rem;
+			border-bottom: 1px solid var(--border-color);
+		}
+
+		.chat-body {
+			flex-grow: 1;
+			padding: 0;
+			overflow: hidden;
+		}
+
+		/* Clubs Specific Styles */
+		#clubs {
+			min-height: auto;
+			padding: 4rem 0;
+		}
+
+		.gathering-wrapper {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 3rem;
+		}
+
+		#clubs .section-header {
+			text-align: left;
+			margin-bottom: 1.5rem;
+			border-bottom: 2px solid var(--border-color);
+			padding-bottom: 0.5rem;
+		}
+
+		#clubs .section-title {
+			font-size: 1.5rem;
+			margin-bottom: 0;
+		}
+
+		#clubs .card-grid {
+			display: grid;
+			grid-template-columns: repeat(2, 1fr);
+			gap: 1.5rem;
+		}
+
+		/* [반응형 미디어 쿼리] - 모바일 최적화 */
+		@media (max-width: 992px) {
+			.hero-title {
+				font-size: 3.5rem;
+			}
+
+			.container-custom {
+				padding: 0 2rem;
+			}
+
+			.stats-grid {
+				grid-template-columns: 1fr;
+				gap: 0;
+			}
+
+			.stat-item {
+				border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+				padding: 2rem 1rem;
+			}
+
+			.gathering-wrapper {
+				grid-template-columns: 1fr;
+				gap: 4rem;
+			}
+
+			/* 모임 섹션 세로 배치 */
+		}
+
+		@media (max-width: 768px) {
+
+		    /* ... 기존 히어로 섹션 등 코드는 유지 ... */
+
+		    /* [수정] 모임 섹션 카드 그리드: 3열로 변경 */
+		    #clubs .card-grid {
+		        grid-template-columns: repeat(3, 1fr); /* 1fr -> repeat(3, 1fr) 변경 */
+		        gap: 0.5rem; /* 간격을 1.5rem -> 0.5rem로 좁힘 */
+		    }
+
+		    /* [수정] 카드 이미지 높이 축소 */
+		    .card-image {
+		        height: 90px; /* 160px -> 90px로 축소 */
+		    }
+
+		    /* [추가] 카드 내부 여백 및 폰트 크기 최적화 */
+		    .card-content {
+		        padding: 0.5rem; /* 패딩 축소 */
+		    }
+
+		    .card-title {
+		        font-size: 0.85rem; /* 제목 폰트 축소 */
+		        margin-bottom: 0.25rem;
+		    }
+
+		    .card-meta {
+		        font-size: 0.65rem; /* 메타 정보 폰트 대폭 축소 */
+		        gap: 2px;
+		        flex-direction: column; /* 가로 공간이 부족하므로 세로 배치로 변경 */
+		        align-items: flex-start;
+		    }
+		    
+		    .card-meta span {
+		        display: inline-flex;
+		        align-items: center;
+		    }
+
+		    /* 챗봇 등 기타 스타일 유지 */
+		    .chat-window {
+		        width: 90vw;
+		        right: 5vw;
+		        margin-right: 0;
+		        bottom: 150px; 
+		    }
+		    .chatbot-btn {
+		        width: 50px;
+		        height: 50px;
+		        font-size: 1.3rem;
+		        bottom: 90px; 
+		    }
+
+			.section-description {
+				font-size: 1.1rem;
+			}
+
+			.section-label {
+				font-size: 1.2rem;
+			}
+
+			/* 필터 */
+			.filter-container {
+				flex-direction: column;
+				align-items: stretch;
+				gap: 0.8rem;
+				padding: 1.25rem;
+			}
+
+			.form-select-custom {
+				width: 100%;
+			}
+
+			.filter-label {
+				text-align: left;
+				margin-bottom: 0.2rem;
+			}
+
+			/* 모임 섹션 카드 그리드 */
+			#clubs .card-grid {
+				grid-template-columns: 1fr;
+			}
+
+			/* 모바일에서 카드 1열 */
+			.card-image {
+				height: 160px;
+			}
+
+			/* 챗봇 */
+			.chat-window {
+				width: 90vw;
+				right: 5vw;
+				margin-right: 0;
+				bottom: 150px; /* Adjusted for bottom nav */
+			}
+
+			.chatbot-btn {
+				width: 50px;
+				height: 50px;
+				font-size: 1.3rem;
+				bottom: 90px; /* Adjusted for bottom nav */
+			}
+            
+            .hide-on-tablet-and-mobile {
+                display: none !important;
+            }
+
+		}
+	</style>
+
+</head>
+
+<body>
+
+	<div th:replace="~{include/navibar :: header-nav}"></div>
+	
+	<section class="hero">
+		<div id="particles-js"></div>
+
+		<div class="hero-content">
+			<h1 class="hero-title fade-in">
+				함께 성장하는<br>
+				우리들의 커뮤니티
+			</h1>
+			<p class="hero-description fade-in">
+				관심사를 공유하고, 새로운 인연을 만들고, 함께 성장하는 공간.<br>
+				NEIGHBUS에서 당신만의 커뮤니티를 시작하세요.
+			</p>
+			<a href="club" class="btn-large fade-in">모임 둘러보기</a>
+		</div>
+	</section>
+
+	<section class="section-primary-dark-bg hide-on-tablet-and-mobile">
+		<div class="container-custom">
+			<div class="section-header fade-in">
+				<div class="section-label">Why NEIGHBUS</div>
+				<p class="section-description">
+					단순한 모임을 넘어, 진정한 연결과 성장을 경험하세요.
+				</p>
+			</div>
+
+			<div class="stats-grid">
+				<div class="stat-item fade-in">
+					<div class="stat-number" th:text="${activeRecruitments}">0</div>
+					<div class="stat-label">Active Groups</div>
+					<p class="stat-description">현재 진행 중인<br>활발한 모임</p>
+				</div>
+				<div class="stat-item fade-in">
+					<div class="stat-number" th:text="${totalUsers}">0</div>
+					<div class="stat-label">Members</div>
+					<p class="stat-description">함께하고 있는<br>커뮤니티 멤버</p>
+				</div>
+				<div class="stat-item fade-in">
+					<div class="stat-number" th:text="${totalViews}">0</div>
+					<div class="stat-label">Visitors</div>
+					<p class="stat-description">경험한 사람들의<br>방문 기록</p>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section class="filter-section section-cream hide-on-tablet-and-mobile">
+		<div class="container-custom">
+			<form id="filterForm">
+				<div class="filter-container fade-in">
+					<div
+						class="w-100 d-flex flex-column flex-md-row gap-2 align-items-md-center justify-content-center">
+						<div class="d-flex flex-column flex-md-row gap-2 align-items-start align-items-md-center">
+							<span class="filter-label">Location</span>
+							<select class="form-select-custom" id="provinceSelect" name="province">
+							    <option value="0" selected>전체 지역</option>
+							    <option th:each="province : ${provinceList}" 
+							            th:value="${province.id}"
+							            th:text="${province.province}">
+							    </option>
+							</select>
+							<select class="form-select-custom" id="citySelect" name="city" onchange="search()">
+							    <option value="0" selected disabled>전체 시/군/구</option>
+							</select>
+						</div>
+
+						<div
+							class="d-flex flex-column flex-md-row gap-2 align-items-start align-items-md-center mt-3 mt-md-0 ms-md-4">
+							<span class="filter-label">Category</span>
+							<select class="form-select-custom" id="categorySelect" name="category" onchange="search()">
+							    <option value="0">카테고리 전체</option>
+							    <option th:each="category : ${categoryList}" 
+							            th:value="${category.id}"
+							            th:text="${category.name}">
+							    </option>
+							</select>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</section>
+
+	<section id="clubs" class="section-cream hide-on-tablet-and-mobile">
+		<div class="container-custom">
+			<div class="gathering-wrapper">
+				<div class="gathering-section">
+					<div class="section-header fade-in">
+						<h2 class="section-title">🔥 인기 동아리</h2>
+					</div>
+					<div class="card-grid" id="popular-grid">
+						<th:block th:each="popularClub : ${popularClubList}">
+							<a th:href="@{/club/{id}(id=${popularClub.id})}" class="text-decoration-none">
+								<div class="card-item fade-in">
+									<img th:if="${popularClub.clubImg != null and !popularClub.clubImg.isEmpty()}"
+										th:src="${popularClub.clubImg}" class="card-image" alt="모임 이미지">
+									<img th:unless="${popularClub.clubImg != null and !popularClub.clubImg.isEmpty()}"
+										src="https://images.unsplash.com/photo-1556761175-b413da4baf72?q=80&w=1974&auto=format&fit=crop"
+										class="card-image" alt="기본 이미지">
+									<div class="card-content">
+										<h3 class="card-title" th:text="${popularClub.clubName}">모임 이름</h3>
+										<div class="card-meta">
+											<span>
+												<i class="bi bi-calendar-event"></i>
+												<span
+													th:text="${#temporals.format(popularClub.created, 'yyyy.MM.dd')}">날짜</span>
+											</span>
+											<span>
+												<i class="bi bi-people-fill"></i>
+												<span th:text="${popularClub.memberCount}">0</span>명
+											</span>
+										</div>
+									</div>
+								</div>
+							</a>
+						</th:block>
+					</div>
+				</div>
+
+				<div class="gathering-section">
+					<div class="section-header fade-in">
+						<h2 class="section-title">✨ 새로운 동아리</h2>
+					</div>
+					<div class="card-grid" id="new-grid">
+						<th:block th:each="newClub : ${newClubList}">
+							<a th:href="@{/club/{id}(id=${newClub.id})}" class="text-decoration-none">
+								<div class="card-item fade-in">
+									<img th:if="${newClub.clubImg != null and !newClub.clubImg.isEmpty()}"
+										th:src="${newClub.clubImg}" class="card-image" alt="모임 이미지">
+									<img th:unless="${newClub.clubImg != null and !newClub.clubImg.isEmpty()}"
+										src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?q=80&w=1949&auto=format&fit=crop"
+										class="card-image" alt="기본 이미지">
+									<div class="card-content">
+										<h3 class="card-title" th:text="${newClub.clubName}">모임 이름</h3>
+										<div class="card-meta">
+											<span>
+												<i class="bi bi-calendar-event"></i>
+												<span
+													th:text="${#temporals.format(newClub.created, 'yyyy.MM.dd')}">날짜</span>
+											</span>
+											<span>
+												<i class="bi bi-people-fill"></i>
+												<span th:text="${newClub.memberCount}">0</span>명
+											</span>
+										</div>
+									</div>
+								</div>
+							</a>
+						</th:block>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+	
+	<div th:replace="~{include/footer :: footer}"></div>
+
+	<div class="chat-widget-container">
+		<div class="chat-window" id="chatWindow">
+			<div class="chat-header">
+				<h5 class="chat-title">Chat Assistant</h5>
+				<button type="button" class="btn-close" onclick="toggleChatWindow(event)"></button>
+			</div>
+			<div class="chat-body">
+				<iframe src="/chatbot/chat" style="width: 100%; height: 100%; border: none;"></iframe>
+			</div>
+		</div>
+		<a id="chatbot-btn"
+			class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center shadow-lg chatbot-btn"
+			onclick="toggleChatWindow(event)">
+			<i class="bi bi-chat-dots-fill"></i>
+		</a>
+	</div>
+
+	<div sec:authorize="isAuthenticated()">
+		<div th:if="${#authentication.principal.phone == '01000000000'}" class="modal fade" id="infoModal"
+			data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content"
+					style="border-radius: 24px; border: none; background-color: #FFFBF7; box-shadow: 0 10px 40px rgba(166, 124, 82, 0.3); overflow: hidden;">
+
+					<div class="modal-header"
+						style="background-color: #A67C52; color: white; border-bottom: none; padding: 1.5rem;">
+						<h5 class="modal-title" style="font-weight: 800; font-size: 1.2rem;">
+							<i class="bi bi-pencil-square me-2"></i>필수 정보 입력
+						</h5>
+					</div>
+
+					<div class="modal-body" style="padding: 2rem;">
+						<p style="text-align: center; color: #8D6E63; font-size: 0.9rem; margin-bottom: 1.5rem;">
+							원활한 서비스 이용을 위해<br>아래 정보를 입력해주세요.
+						</p>
+
+						<form th:action="@{/account/updateSocialInfo}" method="post">
+							<div class="mb-4">
+								<label class="form-label"
+									style="color: #5D4037; font-weight: 700; font-size: 0.95rem;">핸드폰 번호</label>
+								<input type="text" name="phone" class="form-control" placeholder="(예: 01012345678)"
+									maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required
+									style="border: 2px solid #E8D7C3; border-radius: 12px; padding: 12px; background-color: white;">
+							</div>
+
+							<div class="mb-4">
+								<label class="form-label"
+									style="color: #5D4037; font-weight: 700; font-size: 0.95rem;">생년월일</label>
+								<input type="text" name="birth" class="form-control" placeholder="(예: 980101)"
+									maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required
+									style="border: 2px solid #E8D7C3; border-radius: 12px; padding: 12px; background-color: white;">
+							</div>
+
+							<div class="mb-5">
+								<label class="form-label d-block"
+									style="color: #5D4037; font-weight: 700; font-size: 0.95rem; margin-bottom: 10px;">성별</label>
+								<div
+									style="background-color: #FFF5EB; padding: 15px; border-radius: 12px; border: 1px solid #E8D7C3; display: flex; gap: 20px;">
+									<div class="form-check form-check-inline">
+										<input class="form-check-input" type="radio" name="sex" id="male" value="M"
+											required style="cursor: pointer;">
+										<label class="form-check-label" for="male"
+											style="color: #5D4037; cursor: pointer;">남성</label>
+									</div>
+									<div class="form-check form-check-inline">
+										<input class="form-check-input" type="radio" name="sex" id="female" value="F"
+											style="cursor: pointer;">
+										<label class="form-check-label" for="female"
+											style="color: #5D4037; cursor: pointer;">여성</label>
+									</div>
+								</div>
+							</div>
+
+							<div class="d-grid">
+								<button type="submit" class="btn btn-primary"
+									style="background-color: #A67C52; border: none; border-radius: 12px; padding: 14px; font-weight: 800; font-size: 1rem; box-shadow: 0 4px 12px rgba(166, 124, 82, 0.3);">
+									저장하고 시작하기
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+	</div>
+
+	<script>
+		// Particles.js Initialization
+		particlesJS('particles-js', {
+			"particles": {
+				"number": {"value": 80, "density": {"enable": true, "value_area": 800}},
+				"color": {"value": "#A67C52"},
+				"shape": {"type": "circle", "stroke": {"width": 0, "color": "#000000"}},
+				"opacity": {"value": 0.5, "random": false},
+				"size": {"value": 3, "random": true},
+				"line_linked": {"enable": true, "distance": 150, "color": "#A67C52", "opacity": 0.4, "width": 1},
+				"move": {"enable": true, "speed": 3, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false}
+			},
+			"interactivity": {
+				"detect_on": "canvas",
+				"events": {"onhover": {"enable": true, "mode": "grab"}, "onclick": {"enable": true, "mode": "push"}, "resize": true},
+				"modes": {"grab": {"distance": 140, "line_linked": {"opacity": 1}}}
+			},
+			"retina_detect": true
+		});
+
+		// Fade In Animation
+		const observerOptions = {threshold: 0.1, rootMargin: '0px 0px -100px 0px'};
+		const observer = new IntersectionObserver(function (entries) {
+			entries.forEach(entry => {
+				if (entry.isIntersecting) {entry.target.classList.add('visible');}
+			});
+		}, observerOptions);
+		document.querySelectorAll('.fade-in').forEach(el => {observer.observe(el);});
+
+		function toggleChatWindow(event) {
+			event.stopPropagation();
+			const chatWindow = document.getElementById('chatWindow');
+			const chatButton = document.getElementById('chatbot-btn');
+			const isOpening = !chatWindow.classList.contains('show');
+
+			chatWindow.classList.toggle('show');
+			document.body.classList.toggle('chatbot-is-open', isOpening);
+
+			if (isOpening) {
+				chatButton.innerHTML = '<i class="bi bi-x-lg"></i>';
+			} else {
+				chatButton.innerHTML = '<i class="bi bi-chat-dots-fill"></i>';
+			}
+		}
+	</script>
+
+	<script sec:authorize="isAuthenticated()" 
+	        th:if="${#authentication.principal.phone == '01000000000'}">
+	    document.addEventListener('DOMContentLoaded', function () {
+	        var myModal = new bootstrap.Modal(document.getElementById('infoModal'));
+	        myModal.show();
+	    });
+	</script>
+
+	<div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notiModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="notiModalLabel">🔔 알림 목록</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<ul class="list-group list-group-flush" id="notificationList">
+					</ul>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">닫기</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script th:inline="javascript">
+		document.addEventListener("DOMContentLoaded", function () {
+			const provinceSelect = document.getElementById('provinceSelect');
+			const citySelect = document.getElementById('citySelect');
+			const categorySelect = document.getElementById('categorySelect');
+			const cityList = /*[[${regionList}]]*/ [];
+			const initialProvince = /*[[${searchDTO.province}]]*/ 0;
+			const initialCity = /*[[${searchDTO.city}]]*/ 0;
+
+			function populateCities(provinceId, selectedCityId) {
+				if (Number(provinceId) === 0) {
+					citySelect.innerHTML = '<option value="0" selected disabled>전체 시/군/구</option>';
+					return;
+				} else {
+					citySelect.innerHTML = '<option value="0">전체 시/군/구</option>';
+				}
+
+				cityList.forEach(function (city) {
+					const cityProvinceId = Number(city.province);
+					if (cityProvinceId === Number(provinceId)) {
+						const optionElement = document.createElement('option');
+						optionElement.value = city.id;
+						optionElement.textContent = city.city;
+						if (Number(city.id) === Number(selectedCityId)) {
+							optionElement.selected = true;
+						}
+						citySelect.appendChild(optionElement);
+					}
+				});
+			}
+
+			if (Number(initialProvince) !== 0) {
+				populateCities(initialProvince, initialCity);
+			} else {
+				citySelect.innerHTML = '<option value="0" selected disabled>전체 시/군/구</option>';
+			}
+
+			provinceSelect.addEventListener("change", function () {
+			        const selectedProvinceId = Number(this.value);
+			        
+			        // 시/군/구 셀렉트 박스 초기화
+			        if (selectedProvinceId === 0) {
+			            citySelect.innerHTML = '<option value="0" selected disabled>전체 시/군/구</option>';
+			        } else {
+			            citySelect.innerHTML = '<option value="0">전체 시/군/구</option>';
+			            // 선택된 시/도에 해당하는 시/군/구만 필터링하여 추가
+			            cityList.forEach(city => {
+			                if (Number(city.province) === selectedProvinceId) {
+			                    const option = document.createElement('option');
+			                    option.value = city.id;
+			                    option.textContent = city.city;
+			                    citySelect.appendChild(option);
+			                }
+			            });
+			        }
+			        search();
+			    });
+		});
+
+		function search() {
+		    const filterForm = document.getElementById('filterForm');
+		    const formData = new FormData(filterForm);
+
+		    fetch('/api/main/filterRegion', {
+		        method: 'POST',
+		        body: formData
+		    })
+		    .then(response => response.json())
+		    .then(data => {
+		        updateClubLists(data);
+		    })
+		    .catch(error => console.error('검색 오류:', error));
+		}
+
+		function formatDate(dateString) {
+			if (!dateString) return '';
+			const date = new Date(dateString);
+			const year = date.getFullYear();
+			const month = String(date.getMonth() + 1).padStart(2, '0');
+			const day = String(date.getDate()).padStart(2, '0');
+			return `${year}.${month}.${day}`;
+		}
+
+		function createClubCard(club) {
+		    const defaultImg = 'https://images.unsplash.com/photo-1556761175-b413da4baf72?q=80&w=1974&auto=format&fit=crop';
+		    const imgSrc = club.clubImg || defaultImg;
+		    const date = new Date(club.created).toLocaleDateString().replace(/\.$/, "");
+
+		    return `
+		        <a href="/club/${club.id}" class="text-decoration-none">
+		            <div class="card-item fade-in visible">
+		                <img src="${imgSrc}" class="card-image" alt="모임 이미지">
+		                <div class="card-content">
+		                    <h3 class="card-title">${club.clubName}</h3>
+		                    <div class="card-meta">
+		                        <span><i class="bi bi-calendar-event"></i><span>${date}</span></span>
+		                        <span><i class="bi bi-people-fill"></i><span>${club.memberCount}</span>명</span>
+		                    </div>
+		                </div>
+		            </div>
+		        </a>
+		    `;
+		}
+
+		function updateClubLists(data) {
+		    const popularGrid = document.getElementById('popular-grid');
+		    const newGrid = document.getElementById('new-grid');
+
+		    // 인기 동아리 & 새로운 동아리 카드 생성
+		    popularGrid.innerHTML = data.popularClubList.length > 0 
+		        ? data.popularClubList.map(club => createClubCard(club)).join('')
+		        : '<p class="text-center text-secondary w-100 mt-4">조건에 맞는 인기 모임이 없습니다.</p>';
+
+		    newGrid.innerHTML = data.newClubList.length > 0 
+		        ? data.newClubList.map(club => createClubCard(club)).join('')
+		        : '<p class="text-center text-secondary w-100 mt-4">조건에 맞는 새로운 모임이 없습니다.</p>';
+		}
+	</script>
+
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+	<div th:replace="~{include/bottom-navbar :: bottom-nav}"></div>
+</body>
+
+</html>

@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.neighbus.account.AccountMapper">
+
+	<!-- ★ 추가된 부분: 명시적인 ResultMap 정의 ★ 컬럼명과 DTO 필드명 간의 매핑 오류를 방지하고, 특히
+	user_uuid, 
+		created_at과 같이 이름 규칙이 다른 필드의 매핑을 보장합니다. -->
+	<resultMap id="AccountResultMap"
+		type="com.neighbus.account.AccountDTO">
+		<id property="id" column="id" />
+		<result property="name" column="name" />
+		<result property="username" column="username" />
+		<result property="password" column="password" />
+		<result property="province" column="province" />
+		<result property="city" column="city" />
+		<result property="address" column="address" />
+		<result property="phone" column="phone" />
+		<result property="email" column="email" />
+		<result property="image" column="image" />
+		<result property="grade" column="grade" />
+		<result property="birth" column="birth" />
+		<result property="sex" column="sex" />
+		<!-- DB: user_uuid -> DTO: userUuid 명시적 매핑 -->
+		<result property="userUuid" column="user_uuid" />
+		<result property="nickname" column="nickname" />
+		<!-- DB: created_at -> DTO: createdAt 명시적 매핑 -->
+		<result property="createdAt" column="created_at" />
+		<result property="isBlocked" column="is_blocked" />
+		<result property="blocked_until" column="blocked_until" />
+	</resultMap>
+
+	<insert id="insertSignup" parameterType="com.neighbus.account.AccountDTO"
+    useGeneratedKeys="true" keyProperty="id">
+    insert into users(
+        name,
+        username,
+        password,
+        province,
+        city,
+        address,
+        phone,
+        email,
+        birth,
+        sex,
+        user_uuid,
+        nickname,
+        provider,
+        provider_id
+    ) values(
+        #{name},
+        #{username},
+        #{password},
+        #{province},
+        #{city},
+        #{address},
+        #{phone},
+        #{email},
+        #{birth},
+        #{sex},
+        #{userUuid},
+        #{nickname},
+        #{provider},
+        #{providerId} 
+    ) 
+</insert>
+
+	<select id="getProvince" resultType="HashMap">
+		select
+		id as "id",
+		province as
+		"province"
+		from
+		provinces
+		order by
+		id asc;
+	</select>
+
+	<select id="getCity" resultType="HashMap">
+		select
+		id as "id",
+		province as "province",
+		city as "city"
+		from
+		cities
+		order by
+		id asc;
+	</select>
+
+	<select id="checkUsername" resultType="int"
+		parameterType="com.neighbus.account.AccountDTO">
+		select count(username) from users where username =
+		#{username}
+	</select>
+
+	<select id="checkPhone" resultType="int"
+		parameterType="com.neighbus.account.AccountDTO">
+		select count(phone) from users where phone = #{phone} and phone!='01000000000'
+	</select>
+
+	<select id="checkEmail" resultType="int"
+		parameterType="com.neighbus.account.AccountDTO">
+		select count(email) from users where email = #{email}
+	</select>
+
+	<select id="getUser" resultMap="AccountResultMap"
+		parameterType="String">
+		select
+			id,
+			name,
+			username,
+			password,
+			province,
+			city,
+			address,
+			phone,
+			email,
+			image,
+			grade,
+			birth,
+			sex,
+			user_uuid,
+			nickname,
+			created_at,
+			is_blocked,
+			blocked_until
+		from
+			users
+		where
+			username=#{username}
+	</select>
+
+	<select id="getAllUser" resultType="HashMap" parameterType="int">
+		select * from user where id = #{id};
+	</select>
+
+	<select id="countUsers" resultType="int">
+		SELECT COUNT(*) FROM users
+	</select>
+
+	<select id="countViews" resultType="int">
+		SELECT COALESCE(SUM(view_count), 0)
+		FROM (
+		SELECT view_count FROM galleries
+		UNION ALL
+		SELECT view_count FROM freeboards
+		) AS total_views
+	</select>
+	
+	<!--회원 정보 수정-->
+	<update id="updateSocialInfo" parameterType="com.neighbus.account.AccountDTO">
+	    UPDATE
+	    	users
+	    SET
+	        phone = #{phone},
+	        birth = #{birth},
+	        sex = #{sex}   WHERE username = #{username}
+	</update>
+
+	<!-- 갤러리, 게시판에 방문한 횟수 -->
+	<select id="countHistory" resultType="int">
+		SELECT count(*) AS historyCount FROM visit_history;
+	</select>
+	
+	<select id="findAccountByEmail" parameterType="com.neighbus.account.AccountFindDTO" resultType="int">
+		select count(*) from users where email=#{email} and username=#{username}
+	</select>
+	
+	<select id="findAccountByPhone" parameterType="com.neighbus.account.AccountFindDTO" resultType="int">
+		select count(*) from users where phone=#{phone} and username=#{username}
+	</select>
+	
+	<select id="getEmailByPhone" parameterType="String" resultType="String">
+		select email from users where phone=#{phone}
+	</select>
+
+	<update id="updatePwd" parameterType="HashMap">
+		update users set password=#{password} where id=#{id} 
+	</update>
+	
+	<select id="findByEmail" resultType="com.neighbus.account.AccountDTO">
+	    SELECT * FROM users WHERE email = #{email}
+	</select>
+
+</mapper>

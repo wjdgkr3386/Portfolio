@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원가입 - NEIGHBUS</title>
+    <link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/custom-modal.css">
+    <script src="/js/custom-modal.js"></script>
+    <style>
+        :root {
+            --primary: #A67C52;
+            --primary-dark: #8D6E63;
+            --primary-light: #C9A88A;
+            --accent-gold: #D4AF87;
+            --secondary: #F5DEB3;
+            --secondary-light: #F5E6D3;
+            --secondary-lighter: #FAF0E6;
+            --bg-ivory: #FFF8F0;
+            --bg-warm: #FFF5EB;
+            --bg-cream: #FAF0E6;
+            --card-bg: #FFFBF7;
+            --text-primary: #5D4037;
+            --text-secondary: #8D6E63;
+            --text-light: #A1887F;
+            --border-color: #E8D7C3;
+            --shadow-color: rgba(166, 124, 82, 0.15);
+            --shadow-hover: rgba(166, 124, 82, 0.25);
+            --white: #FFFFFF;
+            --error: #DC2626;
+            --success: #059669;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SUIT', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            color: var(--text-primary);
+            min-height: 100vh;
+            background: var(--bg-ivory);
+            overflow-x: hidden;
+        }
+
+        .signup-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 20px;
+            min-height: 100vh;
+            background: linear-gradient(165deg, var(--bg-ivory) 0%, var(--bg-warm) 50%, var(--bg-cream) 100%);
+            position: relative;
+        }
+
+        .signup-container::before {
+            content: '';
+            position: absolute;
+            top: -10%;
+            right: -5%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(166, 124, 82, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(20px, -20px) scale(1.05); }
+        }
+
+        .signup-form-wrapper {
+            width: 100%;
+            max-width: 900px;
+            text-align: center;
+            animation: fadeInSlideUp 1s ease-out;
+            position: relative;
+            z-index: 2;
+        }
+
+        @keyframes fadeInSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .signup-form-wrapper h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1.3;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .signup-form-wrapper .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
+            font-weight: 400;
+        }
+
+        .form-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 3rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem 2rem;
+        }
+
+        .form-group {
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .error-message {
+            font-size: 0.8rem;
+            color: var(--error);
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .success-message {
+            font-size: 0.8rem;
+            color: var(--success);
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            padding: 1rem 1.25rem;
+            font-size: 1rem;
+            color: var(--text-primary);
+            font-family: 'Pretendard', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input.error {
+            border-color: var(--error);
+            background: #FEF2F2;
+        }
+
+        .form-group input.success {
+            border-color: var(--success);
+            background: #F0FDF4;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--secondary-lighter);
+            box-shadow: 0 0 0 3px rgba(166, 124, 82, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-light);
+        }
+
+        .form-group select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%235D4037' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.25rem;
+            cursor: pointer;
+        }
+
+        .region-select-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .region-select-group select {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .gender-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .gender-option {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1rem 1.25rem;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.3s;
+            background: var(--white);
+        }
+
+        .gender-option:hover {
+            border-color: var(--primary);
+            background: var(--secondary-lighter);
+        }
+
+        .gender-option input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .gender-option label {
+            cursor: pointer;
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .gender-option input[type="radio"]:checked + label {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .gender-option:has(input[type="radio"]:checked) {
+            border-color: var(--primary);
+            background: var(--secondary-lighter);
+            box-shadow: 0 0 0 3px rgba(166, 124, 82, 0.1);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 1.1rem;
+            background: var(--primary);
+            color: var(--white);
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+            margin-top: 1rem;
+            grid-column: 1 / -1;
+            box-shadow: 0 4px 15px var(--shadow-color);
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            background: var(--primary-dark);
+            box-shadow: 0 6px 25px var(--shadow-hover);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .form-footer {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .form-footer a {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .form-footer a:hover {
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .signup-container {
+                padding: 40px 20px;
+            }
+
+            .form-card {
+                padding: 2rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+            }
+
+            .signup-form-wrapper h2 {
+                font-size: 2rem;
+            }
+
+            .signup-form-wrapper .subtitle {
+                font-size: 1rem;
+                margin-bottom: 2.5rem;
+            }
+
+            .region-select-group {
+                gap: 0.75rem;
+            }
+
+            .gender-group {
+                gap: 0.75rem;
+            }
+
+            .gender-option {
+                padding: 0.9rem 1rem;
+            }
+
+            .gender-option label {
+                font-size: 0.95rem;
+            }
+
+            .btn-submit {
+                padding: 1rem;
+                font-size: 0.95rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .signup-container {
+                padding: 30px 15px;
+            }
+
+            .signup-form-wrapper h2 {
+                font-size: 1.75rem;
+            }
+
+            .form-card {
+                padding: 1.5rem;
+            }
+
+            .form-group input,
+            .form-group select {
+                padding: 0.9rem 1rem;
+                font-size: 0.95rem;
+            }
+        }
+		
+		/* 주소 전용 스타일 추가 */
+		.address-input-group {
+		    display: flex;
+		    gap: 10px;
+		    margin-bottom: 0.5rem;
+		}
+
+		.address-input-group input {
+		    flex: 1;
+		}
+
+		.btn-search {
+		    width: 120px !important;
+		    margin-top: 0 !important;
+		    padding: 0 1rem !important;
+		    white-space: nowrap;
+		    background-color: var(--text-primary) !important;
+		    font-size: 0.9rem !important;
+		}
+
+		.sub-address-grid {
+		    display: grid;
+		    grid-template-columns: 1fr 1fr;
+		    gap: 10px;
+		    margin-top: 0.5rem;
+		}
+
+		/* 가이드 문구 스타일 */
+		#guide {
+		    font-size: 0.8rem;
+		    padding: 5px 0;
+		    color: var(--text-light);
+		}
+    </style>
+</head>
+
+<body>
+    <main class="signup-container">
+        <div class="signup-form-wrapper">
+            <h2>새로운 시작,<br>NEIGHBUS와 함께</h2>
+            <p class="subtitle">간단한 정보만 입력하고 동네 친구들을 만나보세요</p>
+
+            <div class="form-card">
+                <form id="signupForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="name">이름</label>
+                            <input type="text" id="name" name="name" placeholder="이름을 입력하세요" required>
+							<p class="error-message" id="name-error"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="username">아이디</label>
+                            <input type="text" id="username" name="username" placeholder="아이디를 입력하세요" required>
+                            <p class="error-message" id="username-error">이미 존재하는 아이디입니다.</p>
+                            <p class="error-message" id="username-rule-error"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">비밀번호</label>
+                            <input type="password" id="password" name="password" placeholder="비밀번호를 입력하세요" required>
+                            <p class="error-message" id="password-rule-error"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="passwordConfirm">비밀번호 확인</label>
+                            <input type="password" id="passwordConfirm" name="passwordConfirm" placeholder="비밀번호를 다시 입력하세요" required>
+                            <p class="error-message" id="password-error">비밀번호가 일치하지 않습니다.</p>
+                            <p class="success-message" id="password-success">비밀번호가 일치합니다.</p>
+                        </div>
+						<div class="form-group">
+							<label for="name">닉네임</label>
+							<input type="text" id="nickname" name="nickname" placeholder="닉네임을 입력하세요" required>						
+						</div>
+                        <div class="form-group">
+                            <label for="birth">생년월일</label>
+                            <input type="date" id="birth" name="birth" required>
+                            <p class="error-message" id="birth-error"></p>
+                        </div>
+                        <div class="form-group">
+                            <label>성별</label>
+                            <div class="gender-group">
+                                <div class="gender-option">
+                                    <input type="radio" id="sexM" name="sex" value="M" required>
+                                    <label for="sexM">남성</label>
+                                </div>
+                                <div class="gender-option">
+                                    <input type="radio" id="sexF" name="sex" value="F" required>
+                                    <label for="sexF">여성</label>
+                                </div>
+                            </div>
+                        </div>
+						<div class="form-group full-width" style="display: none;">
+						    <label for="province">시/도</label>
+						    <div class="region-select-group">
+						        <select id="province" name="province" required disabled>
+						            <option value="" disabled selected>시/도</option>
+						            <option th:each="province : ${provinceList}" th:value="${province.id}" th:text="${province.province}"></option>
+						        </select>
+						        <select id="city" name="city" required disabled>
+						            <option value="" disabled selected>시/군/구</option>
+						        </select>
+						    </div>
+						</div>
+						<div class="form-group full-width">
+						    <label>주소지 입력</label>
+						    <div class="address-input-group">
+						        <input type="text" id="sample4_postcode" placeholder="우편번호" readonly>
+						        <button type="button" onclick="sample4_execDaumPostcode()" class="btn-submit btn-search">우편번호 찾기</button>
+						    </div>
+						    
+						    <input type="text" id="sample4_roadAddress" placeholder="도로명주소" readonly style="margin-bottom: 0.5rem;">
+						    
+						    <span id="guide" style="display:none"></span>
+
+						    <div class="address-input-group">
+						        <input type="text" id="address" name="address" placeholder="상세주소" required>
+						    </div>
+						</div>
+						
+                        <div class="form-group">
+                            <label for="phone">전화번호</label>
+                            <input type="tel" id="phone" name="phone" placeholder="010-1234-5678" maxlength="13" required>
+                            <p class="error-message" id="phone-error">올바른 전화번호 형식이 아닙니다.</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">이메일</label>
+                            <input type="email" id="email" name="email" placeholder="example@email.com" required>
+                            <p class="error-message" id="email-error">올바른 이메일 형식이 아닙니다.</p>
+                        </div>
+                        <button type="submit" class="btn-submit">회원가입 완료</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="form-footer">
+                <p>이미 계정이 있으신가요? <a href="login">로그인하기</a></p>
+            </div>
+        </div>
+    </main>
+
+    <script th:inline="javascript">
+        // Dropdown List Logic
+        const provinceSelect = document.getElementById('province');
+        const citySelect = document.getElementById('city');
+        const regionList = /*[[${regionList}]]*/ null;
+
+        provinceSelect.addEventListener('change', function () {
+            const selectedValue = parseInt(this.value, 10);
+            citySelect.innerHTML = '<option value="" disabled selected>시/군/구 선택</option>';
+            if (regionList && selectedValue) {
+                for (let i = 0; i < regionList.length; i++) {
+                    if (selectedValue === regionList[i].province) {
+                        const option = document.createElement('option');
+                        option.value = regionList[i].id;
+                        option.textContent = regionList[i].city;
+                        citySelect.appendChild(option);
+                    }
+                }
+                citySelect.disabled = false;
+            } else {
+                citySelect.disabled = true;
+            }
+        });
+
+        // --- Validation Logic ---
+
+        // Helper to show/hide error messages
+        function setValidationState(input, errorElement, message, isValid) {
+            if (isValid) {
+                input.classList.add('success');
+                input.classList.remove('error');
+                errorElement.classList.remove('show');
+            } else {
+                input.classList.add('error');
+                input.classList.remove('success');
+                errorElement.textContent = message;
+                errorElement.classList.add('show');
+            }
+        }
+        
+
+		// name Validation
+		const nameInput = document.getElementById('name');
+		const nameError = document.getElementById('name-error');
+		
+		function validateName() {
+		    const value = nameInput.value.trim();
+		    const pattern = /^[가-힣]{2,5}$/;
+
+		    if (value === '') {
+		        setValidationState(nameInput, nameError, '이름을 입력해주세요.', false);
+		        return false;
+		    }
+
+		    if (!pattern.test(value)) {
+		        setValidationState(
+		            nameInput,
+		            nameError,
+		            '이름은 한글 2~5자로 입력해주세요.',
+		            false
+		        );
+		        return false;
+		    }
+
+		    setValidationState(nameInput, nameError, '', true);
+		    return true;
+		}
+
+		
+		// Username Validation
+        const usernameInput = document.getElementById('username');
+        const usernameRuleError = document.getElementById('username-rule-error');
+        const usernameServerError = document.getElementById('username-error');
+
+        function validateUsername() {
+            const value = usernameInput.value.trim();
+            const pattern = /^[a-zA-Z0-9]{8,15}$/;
+            usernameServerError.classList.remove('show'); // Hide server error on new input
+
+            if (value === '') {
+                setValidationState(usernameInput, usernameRuleError, '아이디를 입력해주세요.', false);
+                return false;
+            }
+            if (!pattern.test(value)) {
+                setValidationState(usernameInput, usernameRuleError, '아이디는 8~15자의 영문 및 숫자 조합이어야 합니다.', false);
+                return false;
+            }
+            
+            setValidationState(usernameInput, usernameRuleError, '', true);
+            return true;
+        }
+
+        // Password Rule Validation
+        const passwordInput = document.getElementById('password');
+        const passwordRuleError = document.getElementById('password-rule-error');
+
+        function validatePasswordRule() {
+            const value = passwordInput.value.trim();
+            const pattern = /^[a-zA-Z0-9!@#$%^&*()]{8,15}$/;
+
+            if (value === '') {
+                setValidationState(passwordInput, passwordRuleError, '비밀번호를 입력해주세요.', false);
+                return false;
+            }
+            if (!pattern.test(value)) {
+                setValidationState(passwordInput, passwordRuleError, '비밀번호는 8~15자의 영문, 숫자, 특수문자(!@#$%^&*()) 조합이어야 합니다.', false);
+                return false;
+            }
+            
+            setValidationState(passwordInput, passwordRuleError, '', true);
+            return true;
+        }
+
+        // Password Confirmation Validation
+        const passwordConfirmInput = document.getElementById('passwordConfirm');
+        const passwordConfirmError = document.getElementById('password-error');
+        const passwordConfirmSuccess = document.getElementById('password-success');
+
+        function validatePasswordConfirm() {
+            const passwordValue = passwordInput.value.trim();
+            const confirmValue = passwordConfirmInput.value.trim();
+
+            if (confirmValue === '') {
+                setValidationState(passwordConfirmInput, passwordConfirmError, '비밀번호를 다시 한번 입력해주세요.', false);
+                passwordConfirmSuccess.classList.remove('show');
+                return false;
+            }
+            if (passwordValue !== confirmValue) {
+                setValidationState(passwordConfirmInput, passwordConfirmError, '비밀번호가 일치하지 않습니다.', false);
+                passwordConfirmSuccess.classList.remove('show');
+                return false;
+            }
+            
+            passwordConfirmInput.classList.add('success');
+            passwordConfirmInput.classList.remove('error');
+            passwordConfirmError.classList.remove('show');
+            passwordConfirmSuccess.classList.add('show');
+            return true;
+        }
+
+        // Birth Date Validation
+        const birthInput = document.getElementById('birth');
+        const birthError = document.getElementById('birth-error');
+
+        function validateBirth() {
+            const value = birthInput.value;
+            if (value === '') {
+                setValidationState(birthInput, birthError, '생년월일을 선택해주세요.', false);
+                return false;
+            }
+            
+            const birthDate = new Date(value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (birthDate >= today) {
+                setValidationState(birthInput, birthError, '생년월일은 오늘보다 이전 날짜여야 합니다.', false);
+                return false;
+            }
+            
+            setValidationState(birthInput, birthError, '', true);
+            return true;
+        }
+
+        // Phone Number Validation
+        const phoneInput = document.getElementById('phone');
+        const phoneError = document.getElementById('phone-error');
+
+        function formatPhoneNumber(value) {
+            const numbers = value.replace(/[^\d]/g, '');
+            if (numbers.length <= 3) return numbers;
+            if (numbers.length <= 7) return numbers.slice(0, 3) + '-' + numbers.slice(3);
+            return numbers.slice(0, 3) + '-' + numbers.slice(3, 7) + '-' + numbers.slice(7, 11);
+        }
+
+        function validatePhone() {
+            const value = phoneInput.value;
+            const numbers = value.replace(/[^\d]/g, '');
+            const pattern = /^01[0-9]\d{7,8}$/;
+            
+            if (numbers === '') {
+                setValidationState(phoneInput, phoneError, '전화번호를 입력해주세요.', false);
+                return false;
+            }
+            if (!pattern.test(numbers)) {
+                setValidationState(phoneInput, phoneError, '올바른 전화번호 형식이 아닙니다. (예: 010-1234-5678)', false);
+                return false;
+            }
+
+            setValidationState(phoneInput, phoneError, '', true);
+            return true;
+        }
+        
+        // Email Validation
+        const emailInput = document.getElementById('email');
+        const emailError = document.getElementById('email-error');
+        
+        function validateEmail() {
+            const value = emailInput.value.trim();
+            const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (value === '') {
+                setValidationState(emailInput, emailError, '이메일을 입력해주세요.', false);
+                return false;
+            }
+            if (!pattern.test(value)) {
+                setValidationState(emailInput, emailError, '올바른 이메일 형식이 아닙니다.', false);
+                return false;
+            }
+            
+            setValidationState(emailInput, emailError, '', true);
+            return true;
+        }
+
+        // --- Event Listeners ---
+		nameInput.addEventListener('input', validateName);
+        usernameInput.addEventListener('input', validateUsername);
+        passwordInput.addEventListener('input', validatePasswordRule);
+        passwordConfirmInput.addEventListener('input', validatePasswordConfirm);
+        passwordInput.addEventListener('input', validatePasswordConfirm); // Re-validate confirm if main password changes
+        birthInput.addEventListener('change', validateBirth);
+        phoneInput.addEventListener('input', (e) => {
+            e.target.value = formatPhoneNumber(e.target.value);
+            validatePhone();
+        });
+        emailInput.addEventListener('input', validateEmail);
+        
+        
+        // --- Form Submission ---
+        const signupForm = document.getElementById('signupForm');
+
+        function signupProc(event) {
+            // Run all validations and show errors
+			const isNameValid = validateName();
+            const isUsernameValid = validateUsername();
+            const isPasswordRuleValid = validatePasswordRule();
+            const isPasswordConfirmValid = validatePasswordConfirm();
+            const isBirthValid = validateBirth();
+            const isPhoneValid = validatePhone();
+            const isEmailValid = validateEmail();
+
+            const requiredRadios = document.querySelectorAll('input[type="radio"][required]');
+            let isRadioValid = true;
+            requiredRadios.forEach(radio => {
+                const groupName = radio.name;
+                if (!document.querySelector(`input[name="${groupName}"]:checked`)) {
+                    isRadioValid = false;
+                }
+            });
+
+            // If any validation fails, stop submission
+            if (!isNameValid || !isUsernameValid || !isPasswordRuleValid || !isPasswordConfirmValid || !isBirthValid || !isPhoneValid || !isEmailValid || !isRadioValid) {
+                 showModal('warning', '입력 정보 확인', '입력된 정보를 다시 확인해주세요. 각 항목 아래의 오류 메시지를 확인하세요.');
+                return;
+            }
+
+            // All client-side validation passed, proceed with fetch
+            const name = document.getElementById('name');
+            const nickname = document.getElementById('nickname');
+            const province = document.getElementById('province');
+            const city = document.getElementById('city');
+            const address = document.getElementById('address');
+            const gender = document.querySelector('input[name="sex"]:checked');
+			const roadAddr = document.getElementById('sample4_roadAddress').value;
+			const detailAddr = document.getElementById('address').value.trim();
+			const combinedAddress = `${roadAddr} (${detailAddr})`;
+            
+            fetch("/insertSignup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: name.value.trim(),
+                    nickname: nickname.value.trim(),
+                    username: usernameInput.value.trim(),
+                    password: passwordInput.value.trim(),
+                    birth: birthInput.value.replace(/-/g, '').slice(2),
+                    sex: gender.value,
+                    province: parseInt(province.value),
+                    city: parseInt(city.value),
+                    address: combinedAddress,
+                    phone: phoneInput.value.replace(/[^\d]/g, ''),
+                    email: emailInput.value.trim()
+                })
+            }).then(res => res.json())
+                .then(data => {
+                    if (data.status === 1) {
+                        location.replace("/account/login");
+                    } else {
+                        // Handle server-side validation errors
+                        if (data.status === -2) {
+                            setValidationState(usernameInput, usernameServerError, "이미 존재하는 아이디입니다.", false);
+                            usernameInput.focus();
+                        } else if (data.status === -3) {
+                            setValidationState(phoneInput, phoneError, "이미 존재하는 전화번호입니다.", false);
+                            phoneInput.focus();
+                        } else if (data.status === -4) {
+                             setValidationState(emailInput, emailError, "이미 존재하는 이메일입니다.", false);
+                             emailInput.focus();
+                        } else {
+                            showModal('error', '오류', '오류입니다. 관리자에게 문의 주세요.');
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showModal('error', '서버 오류', '서버 오류가 발생했습니다.');
+                });
+        }
+
+        signupForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            signupProc(e);
+        });
+    </script>
+
+	<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+	<script>
+		function sample4_execDaumPostcode() {
+		    new daum.Postcode({
+		        oncomplete: function(data) {
+		            document.getElementById('sample4_postcode').value = data.zonecode;
+		            document.getElementById("sample4_roadAddress").value = data.roadAddress;
+
+		            const sidoMap = {
+		                '서울': '서울특별시', '부산': '부산광역시', '대구': '대구광역시',
+		                '인천': '인천광역시', '광주': '광주광역시', '대전': '대전광역시',
+		                '울산': '울산광역시', '세종': '세종특별자치시', '경기': '경기도',
+		                '강원': '강원특별자치도', '충북': '충청북도', '충남': '충청남도',
+		                '전북': '전북특별자치도', '전남': '전라남도', '경북': '경상북도',
+		                '경남': '경상남도', '제주': '제주특별자치도'
+		            };
+
+		            const rawSido = data.roadAddress.split(' ')[0];
+		            const fullSidoName = sidoMap[rawSido] || rawSido;
+
+		            const targetProvince = Array.from(provinceSelect.options).find(opt => opt.text === fullSidoName);
+
+		            if (targetProvince) {
+		                provinceSelect.value = targetProvince.value;
+		                provinceSelect.dispatchEvent(new Event('change'));
+
+		                setTimeout(() => {
+		                    const sigunguName = data.sigungu || data.sido;
+		                    const targetCity = Array.from(citySelect.options).find(opt => 
+		                        sigunguName.includes(opt.text) || opt.text.includes(sigunguName.split(' ')[0])
+		                    );
+		                    if (targetCity) {
+		                        citySelect.value = targetCity.value;
+		                    }
+		                    // [추가] 시/도와 시/군/구를 다시 잠금
+		                    provinceSelect.disabled = true;
+		                    citySelect.disabled = true;
+		                }, 300);
+		            }
+		        }
+		    }).open();
+		}
+	</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

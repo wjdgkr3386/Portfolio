@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>NEIGHBUS - 채팅방</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/custom-modal.css">
+    <script src="/js/custom-modal.js"></script>
+
+    <style>
+        /* NEIGHBUS 공통 CSS 변수 (메인 페이지에서 가져옴) */
+        :root {
+            --primary: #A67C52;
+            --primary-dark: #8D6E63;
+            --primary-light: #C9A88A;
+            --bg-ivory: #FFF8F0;
+            --bg-warm: #FFF5EB;
+            --bg-cream: #FAF0E6;
+            --card-bg: #FFFBF7;
+            --text-primary: #5D4037;
+            --text-secondary: #8D6E63;
+            --text-light: #A1887F;
+            --border-color: #E8D7C3;
+            --shadow-color: rgba(166, 124, 82, 0.1);
+            --shadow-hover: rgba(166, 124, 82, 0.2);
+            --white: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SUIT', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            color: var(--text-primary);
+            background: var(--bg-ivory);
+            line-height: 1.6;
+            height: 100vh;
+            overflow: hidden; /* 전체 페이지 채팅을 위해 스크롤 방지 */
+        }
+        
+        /* -------------------------------------- */
+        /* Chat Specific Styles */
+        /* -------------------------------------- */
+
+        .chat-container {
+            width: 100%;
+            height: 100vh;
+            background: var(--bg-warm); /* 전체 배경 */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 채팅 헤더 (모집글 제목) */
+        .chat-container h2 {
+            /* NEIGHBUS primary 색상 그라데이션 적용 */
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            color: var(--white);
+            padding: 20px 24px;
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 채팅 아이콘 */
+        .chat-container h2 i.bi-chat-dots-fill {
+            font-size: 20px;
+        }
+
+        /* 채팅 메시지 목록 영역 */
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: var(--bg-ivory); /* 메시지 배경 */
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* 스크롤바 디자인 (NEIGHBUS 스타일) */
+        .chat-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-list::-webkit-scrollbar-track {
+            background: var(--bg-warm);
+        }
+
+        .chat-list::-webkit-scrollbar-thumb {
+            background: var(--primary-light);
+            border-radius: 4px;
+        }
+
+        .chat-list::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        .chat-message {
+            margin-bottom: 0;
+            animation: slideIn 0.3s ease;
+            display: flex;
+            width: 100%;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 시스템 메시지 (입장/퇴장) */
+        .chat-message.system-message {
+            justify-content: center;
+        }
+
+        .chat-message.system-message > div {
+            text-align: center !important;
+            color: var(--text-light) !important;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 8px 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 상대방 메시지 (왼쪽) */
+        .chat-message.other-message {
+            justify-content: flex-start;
+        }
+
+        .chat-message.other-message .message-bubble {
+            background: var(--white);
+            padding: 12px 16px;
+            border-radius: 4px 18px 18px 18px;
+            box-shadow: 0 2px 8px var(--shadow-color);
+            max-width: 70%;
+            word-wrap: break-word;
+            border: 1px solid var(--border-color);
+        }
+
+        /* 내 메시지 (오른쪽) */
+        .chat-message.my-message {
+            justify-content: flex-end;
+        }
+
+        .chat-message.my-message .message-bubble {
+            background: linear-gradient(135deg, #FFE082 0%, #FFD54F 100%);
+            padding: 12px 16px;
+            border-radius: 18px 4px 18px 18px;
+            box-shadow: 0 2px 8px rgba(255, 193, 7, 0.25);
+            max-width: 70%;
+            word-wrap: break-word;
+            border: 1px solid #FFD54F;
+        }
+
+        /* 발신자 이름 */
+        .message-bubble .sender-name {
+            color: var(--primary-dark);
+            font-weight: 600;
+            font-size: 13px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* 내 메시지일 때는 발신자 이름 숨김 */
+        .chat-message.my-message .sender-name {
+            display: none;
+        }
+
+        /* 메시지 내용 */
+        .message-bubble .message-text {
+            color: var(--text-primary);
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .chat-message.my-message .message-text {
+            color: #5D4037;
+        }
+
+        /* 입력 그룹 */
+        .input-group {
+            display: flex;
+            gap: 10px;
+            padding: 16px 20px;
+            background: var(--bg-cream); /* 입력창 배경 */
+            border-top: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        /* 입력 필드 */
+        .input-group input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: 'SUIT', sans-serif;
+            transition: all 0.3s ease;
+            background: var(--card-bg); /* 입력창 내부 배경 */
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(166, 124, 82, 0.2);
+        }
+
+        .input-group input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        /* 전송 버튼 */
+        .input-group button {
+            padding: 14px 28px;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'SUIT', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px var(--shadow-color);
+        }
+        
+        /* 폰트어썸 아이콘 대신 부트스트랩 아이콘 사용 */
+        .input-group button i.bi-send-fill {
+            font-size: 14px;
+        }
+
+        .input-group button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px var(--shadow-hover);
+        }
+
+        .input-group button:active {
+            transform: translateY(0);
+        }
+
+        /* 반응형 디자인 */
+        /* Tablet & iPad */
+        @media (max-width: 991px) {
+            .chat-container {
+                height: calc(100vh - 80px - env(safe-area-inset-bottom));
+            }
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .chat-container {
+                height: calc(100vh - 90px - env(safe-area-inset-bottom));
+            }
+
+            .chat-container h2 {
+                padding: 16px 18px;
+                font-size: 18px;
+            }
+
+            .chat-list {
+                padding: 16px;
+            }
+
+            .chat-message.other-message .message-bubble,
+            .chat-message.my-message .message-bubble {
+                max-width: 85%;
+            }
+
+            .input-group {
+                padding: 14px 16px;
+            }
+
+            .input-group input {
+                padding: 12px 16px;
+            }
+
+            .input-group button {
+                padding: 12px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="app" class="chat-container">
+    <h2 th:text="${recruitment.title}">
+        <i class="bi bi-chat-dots-fill"></i>
+        모집글 제목
+    </h2>
+    <div class="chat-list">
+        <div class="chat-message"
+             v-for="message in messages"
+             :class="getMessageClass(message)">
+            <div v-if="message.type === 'ENTER'">
+                {{message.message}}
+            </div>
+            <div v-else class="message-bubble">
+                <span class="sender-name">[{{message.senderNickname}}]</span>
+                <span class="message-text">{{message.message}}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="input-group">
+        <input type="text" v-model="message" @keyup.enter="sendMessage" placeholder="내용을 입력하세요">
+        <button @click="sendMessage">
+            전송
+            <i class="bi bi-send-fill"></i>
+        </button>
+    </div>
+</div>
+
+<script th:inline="javascript">
+	// 기존 JavaScript 로직 유지
+	var roomId = /*[[${roomId}]]*/ null;
+	var userName = /*[[${user}]]*/ null;
+	var dbMessages = /*[[${messageHistory}]]*/ [];
+
+	var vm = new Vue({
+	        el: '#app',
+	        data: {
+	            roomId: roomId,
+	            room: {},
+	            sender: userName,
+	            message: '',
+	            messages: []
+	        },
+	        created() {
+	            this.connect();
+	            this.loadHistory();
+	        },
+	        methods: {
+	            getMessageClass: function(message) {
+	                if (message.type === 'ENTER') {
+	                    return 'system-message';
+	                } else if (message.sender === this.sender) {
+	                    return 'my-message';
+	                } else {
+	                    return 'other-message';
+	                }
+	            },
+	            loadHistory: function() {
+	                this.messages = dbMessages.map(function(msg) {
+	                    return {
+	                        "type": msg.messageType,
+	                        "sender": msg.sender,
+	                        "senderNickname": msg.senderNickname,
+	                        "message": msg.message
+	                    };
+	                });
+	                this.scrollToBottom();
+	            },
+	            connect: function() {
+	                var sock = new SockJS("/ws-stomp");
+	                var ws = Stomp.over(sock);
+	                var _this = this;
+
+	                ws.connect({}, function(frame) {
+	                    ws.subscribe("/sub/chat/room/"+_this.roomId, function(message) {
+	                        var recv = JSON.parse(message.body);
+	                        _this.recvMessage(recv);
+	                    });
+	                    
+	                    // 연결 후 ENTER 메시지 전송 로직이 필요할 경우 추가
+	                    // 예: ws.send("/pub/chat/message", {}, JSON.stringify({ messageType:'ENTER', ... }));
+	                   
+	                }, function(error) {
+	                    showModal('error', '연결 실패', '채팅 서버에 연결할 수 없습니다. 페이지를 새로고침해주세요.');
+	                });
+	                
+	                this.ws = ws;
+	            },
+	            sendMessage: function() {
+	                if (!this.message.trim()) return;
+
+	                this.ws.send("/pub/chat/message", {}, JSON.stringify({
+	                    messageType:'TALK', 
+	                    roomId:this.roomId, 
+	                    sender:this.sender, 
+	                    message:this.message
+	                }));
+	                this.message = '';
+	            },
+	            recvMessage: function(recv) {
+	                this.messages.push({
+	                    "type": recv.messageType,
+	                    "sender": recv.sender,
+	                    "senderNickname": recv.senderNickname,
+	                    "message": recv.message
+	                });
+	                this.scrollToBottom();
+	            },
+	            scrollToBottom: function() {
+	                setTimeout(() => {
+	                    var chatList = document.querySelector('.chat-list');
+	                    if(chatList) chatList.scrollTop = chatList.scrollHeight;
+	                }, 10);
+	            }
+	        }
+	    });
+</script>
+<div th:replace="~{include/bottom-navbar :: bottom-nav}"></div>
+</body>
+</html>

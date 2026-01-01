@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neighbus.recruitment.RecruitmentMapper">
+
+    <update id="updateExpiredRecruitments">
+        UPDATE recruitments
+        SET status = 'CLOSED'
+        WHERE status = 'OPEN' 
+          AND meeting_date IS NOT NULL 
+          AND meeting_date &lt; NOW()
+    </update>
+
+    <sql id="gatheringSelect">
+        SELECT
+            r.id,
+            r.club_id as clubId,
+            r.title,
+            r.status,
+            r.max_user as maxUser,
+            DATE_FORMAT(r.meeting_date, '%Y-%m-%d %H:%i:%s') as meetingDate,
+            (SELECT COUNT(*) FROM recruitment_member rm WHERE rm.recruitment_id = r.id) as memberCount,
+            u.name AS writerName,
+            u.username AS writerUsername
+        FROM
+            recruitments r
+        LEFT JOIN
+            users u ON r.writer = u.id
+    </sql>
+
+    <sql id="gatheringFilter">
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND r.title LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+            <if test="status != null and status != ''">
+                AND r.status = #{status}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectGatheringsPaginated" resultType="map" parameterType="map">
+        <include refid="gatheringSelect"/>
+        <include refid="gatheringFilter"/>
+        <choose>
+            <when test='sortField != null and sortField == "clubId"'>
+                ORDER BY r.club_id ${sortOrder}
+            </when>
+            <when test='sortField != null and sortField == "meetingDate"'>
+                ORDER BY r.meeting_date ${sortOrder}
+            </when>
+            <otherwise>
+                ORDER BY r.id ${sortOrder}
+            </otherwise>
+        </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countTotalGatherings" resultType="int" parameterType="map">
+        SELECT COUNT(r.id)
+        FROM recruitments r
+        <include refid="gatheringFilter"/>
+    </select>
+    
+    <select id="findAll" resultType="com.neighbus.recruitment.RecruitmentDTO">
+        SELECT *
+        FROM recruitments
+        ORDER BY id DESC
+    </select>
+    
+    <insert id="createRecruitment" parameterType="com.neighbus.recruitment.RecruitmentDTO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO recruitments (club_id, title, content, writer, address, max_user, meeting_date, latitude, longitude)
+        VALUES (#{clubId}, #{title}, #{content}, #{writer}, #{address}, #{maxUser}, #{meetingDate}, #{latitude}, #{longitude})
+    </insert>
+    
+    <delete id="deleteRecruitment" parameterType="int">
+        DELETE FROM recruitments WHERE id = #{recruitmentId}
+    </delete>
+
+    <insert id="joinRecruitment" parameterType="map">
+        INSERT INTO recruitment_member (recruitment_id, user_id) VALUES (#{recruitmentId}, #{userId})
+    </insert>
+
+    <delete id="withdrawalRecruitment" parameterType="map">
+        DELETE FROM recruitment_member WHERE recruitment_id = #{recruitmentId} AND user_id = #{userId}
+    </delete>
+
+    <select id="findById" parameterType="int" resultType="com.neighbus.recruitment.RecruitmentDTO">
+    SELECT 
+        r.*, 
+        u.nickname AS nickname
+    FROM recruitments r
+    JOIN users u ON r.writer = u.id
+    WHERE r.id = #{id}
+</select>
+    
+    <select id="isMember" parameterType="map" resultType="int">
+        SELECT COUNT(*) FROM recruitment_member WHERE recruitment_id = #{recruitmentId} AND user_id = #{userId}
+    </select>
+    
+    <select id="countMembersByRecruitmentId" parameterType="int" resultType="int">
+        SELECT COUNT(*) FROM recruitment_member WHERE recruitment_id = #{recruitmentId}
+    </select>
+    
+    <select id="findRecruitmentsByMyClubs" parameterType="int" resultType="com.neighbus.recruitment.RecruitmentDTO">
+        SELECT r.*
+        FROM recruitments r
+        JOIN club_members cm ON r.club_id = cm.club_id
+        WHERE cm.user_id = #{userId}
+        ORDER BY r.id DESC
+    </select>
+    
+    <select id="findRecruitmentsByUserId" parameterType="int" resultType="com.neighbus.recruitment.RecruitmentDTO">
+    SELECT 
+        r.*, 
+        u.nickname AS nickname
+    FROM recruitments r
+    JOIN recruitment_member rm ON r.id = rm.recruitment_id
+    JOIN users u ON r.writer = u.id
+    WHERE rm.user_id = #{userId}
+    ORDER BY r.id DESC
+</select>
+    
+    <select id="findRecruitmentsByClubAndDate" resultType="com.neighbus.recruitment.RecruitmentDTO">
+        SELECT *
+        FROM recruitments
+        WHERE club_id = #{clubId} AND DATE(meeting_date) = #{date}
+    </select>
+    
+    <select id="countByRecruitment" resultType="int">
+        SELECT COUNT(*)
+        FROM recruitments r
+        WHERE (SELECT COUNT(*) FROM recruitment_member rm WHERE rm.recruitment_id = r.id) &lt; r.max_user
+    </select>
+
+    <select id="findMemberIdsByRecruitmentId" parameterType="int" resultType="int">
+        SELECT user_id
+        FROM recruitment_member
+        WHERE recruitment_id = #{recruitmentId}
+    </select>
+
+    <select id="countGatheringsByStatus" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM recruitments
+        WHERE status = #{status}
+    </select>
+    
+	<select id="findRecruitmentsByClubId"
+	        parameterType="int"
+	        resultType="com.neighbus.recruitment.RecruitmentDTO">
+	    SELECT
+	        r.id,
+	        r.club_id        AS clubId,
+	        r.title,
+	        r.content,
+	        r.writer,
+	        r.address,
+	        r.max_user       AS maxUser,
+	        r.created_at     AS created_at,
+	        DATE_FORMAT(r.meeting_date, '%Y-%m-%d %H:%i:%s') AS meetingDate,
+	        r.status,
+	        r.latitude,
+	        r.longitude,
+	        u.nickname       AS nickname
+	    FROM recruitments r
+	    LEFT JOIN users u
+	        ON r.writer = u.id
+	    WHERE r.club_id = #{clubId}
+	    ORDER BY r.meeting_date DESC
+	</select>
+
+    <select id="findMeetingDatesByClubId" parameterType="int" resultType="string">
+        SELECT DISTINCT DATE_FORMAT(meeting_date, '%Y-%m-%d')
+        FROM recruitments
+        WHERE club_id = #{clubId}
+    </select>
+
+</mapper>

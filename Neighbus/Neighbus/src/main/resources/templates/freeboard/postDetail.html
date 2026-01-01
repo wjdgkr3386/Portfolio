@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!-- CSRF 토큰 -->
+	<meta name="_csrf" th:content="${_csrf.token}"/>
+	<meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+	<title th:text="|${post.title} - 자유게시판 - NEIGHBUS|">자유게시판 게시글 상세 - NEIGHBUS</title>
+
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/navibar.css">
+    <link rel="stylesheet" href="/css/custom-modal.css">
+    <link rel="stylesheet" href="/css/bottom-navbar.css">
+    <script src="/js/custom-modal.js"></script>
+    
+	<style>
+		:root {
+            --primary: #A67C52;
+            --primary-dark: #8D6E63;
+            --primary-light: #C9A88A;
+            --accent-gold: #D4AF87;
+            --accent-red: #C87E7E;
+            --accent-red-dark: #B36A6A;
+            --bg-ivory: #FFF8F0;
+            --bg-warm: #FFF5EB;
+            --bg-cream: #FAF0E6;
+            --card-bg: #FFFBF7;
+            --text-primary: #5D4037;
+            --text-secondary: #8D6E63;
+            --text-light: #A1887F;
+            --border-color: #E8D7C3;
+            --shadow-color: rgba(166, 124, 82, 0.1);
+            --white: #FFFFFF;
+        }
+		
+		body {
+		    font-family: 'SUIT', sans-serif;
+		    background: var(--bg-ivory);
+		    color: var(--text-primary);
+		    margin: 0;
+		    font-weight: 400;
+		}
+
+		.custom-container {
+		    max-width: 900px;
+		    margin: 40px auto;
+		    padding: 0 20px;
+		}
+
+		.post-container {
+			position: relative;
+			background: var(--card-bg);
+			border-radius: 16px;
+			padding: 40px;
+			box-shadow: 0 10px 30px var(--shadow-color);
+			border: 1px solid var(--border-color);
+		}
+
+		.post-header .post-title {
+			font-size: 30px;
+			font-weight: 800;
+			margin-bottom: 15px;
+			line-height: 1.4;
+		}
+
+		.post-meta {
+			display: flex;
+			align-items: center;
+			gap: 20px;
+			color: var(--text-secondary);
+			font-size: 14px;
+			margin-bottom: 30px;
+			padding-bottom: 30px;
+			border-bottom: 1px solid var(--border-color);
+		}
+		.post-meta span { display: flex; align-items: center; gap: 8px; }
+		.post-content { font-size: 16px; line-height: 1.8; margin-bottom: 40px; white-space: pre-wrap; }
+		.post-content img { max-width: 100%; display: block; margin: 5px 0; }
+
+		.btn-report {
+			position: absolute;
+			top: 40px;
+			right: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: var(--bg-cream);
+            color: var(--accent-red);
+            border: 1px solid var(--border-color);
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 13px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+		}
+        .btn-report:hover {
+            background: var(--accent-red);
+            color: var(--white);
+            border-color: var(--accent-red);
+            box-shadow: 0 4px 12px rgba(200, 126, 126, 0.3);
+        }
+
+		.post-navigation-section {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			gap: 8px;
+			margin-top: 30px;
+			padding: 20px 0;
+			border-bottom: 1px solid var(--border-color);
+		}
+		.reaction-buttons-group { display: flex; gap: 15px; justify-content: center; }
+		.nav-placeholder { width: 44px; flex-shrink: 0; }
+		.reaction-btn { display: flex; align-items: center; gap: 8px; padding: 12px 24px; border: 2px solid var(--border-color); background: var(--card-bg); color: var(--text-secondary); border-radius: 50px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
+		.reaction-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px var(--shadow-hover); }
+		.reaction-btn i { font-size: 18px; }
+		.reaction-count { min-width: 20px; text-align: center; font-weight: 700; }
+		.like-btn.active { background: var(--primary); color: var(--white); border-color: var(--primary); }
+		.dislike-btn.active { background: var(--accent-red); color: var(--white); border-color: var(--accent-red); }
+
+		.post-actions-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 30px; flex-wrap: wrap; }
+		.btn-list { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: var(--primary); color: var(--white); border-radius: 12px; font-weight: 700; font-size: 15px; text-decoration: none; transition: all 0.3s; }
+		.btn-list:hover { background: var(--primary-dark); }
+		.btn-prev, .btn-next { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; background: var(--card-bg); color: var(--text-primary); border: 2px solid var(--border-color); border-radius: 50%; font-size: 1.2rem; text-decoration: none; transition: all 0.3s ease; }
+		.btn-prev:hover, .btn-next:hover { background: var(--bg-warm); border-color: var(--primary-light); }
+		.post-actions { display: flex; gap: 8px; }
+		.btn-edit, .btn-delete { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border: 2px solid var(--border-color); background: transparent; color: var(--text-secondary); border-radius: 12px; font-weight: 600; font-size: 14px; text-decoration: none; transition: all 0.3s ease; }
+		.btn-edit:hover { background: var(--accent-gold); border-color: var(--accent-gold); color: var(--white); }
+		.btn-delete:hover { background: var(--accent-red); border-color: var(--accent-red); color: var(--white); }
+		
+		.comment-section { margin-top: 40px; padding-top: 20px; }
+		.comment-header { font-size: 20px; font-weight: 700; margin-bottom: 25px; color: var(--text-primary); border-bottom: 2px solid var(--primary-light); padding-bottom: 10px; }
+		#comment-list { list-style: none; padding: 0; }
+		.comment-item { display: flex; gap: 15px; padding: 20px 0; border-top: 1px solid var(--border-color); }
+		.comment-item:last-child { border-bottom: 1px solid var(--border-color); }
+		.comment-avatar { width: 40px; height: 40px; border-radius: 50%; background-color: var(--primary-light); flex-shrink: 0; }
+		.comment-body { flex: 1; }
+		.comment-info { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+		.comment-author { font-weight: 700; color: var(--text-primary); font-size: 15px; }
+		.comment-time { font-size: 12px; color: var(--text-secondary); }
+		.comment-content { margin-bottom: 10px; white-space: pre-wrap; }
+		.comment-actions { display: flex; gap: 15px; font-size: 13px; }
+		.comment-actions button, .comment-actions a { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0; text-decoration: none; transition: color 0.2s; }
+		.comment-actions a:hover { color: var(--primary); }
+		.comment-actions a.comment-delete-btn { color: var(--accent-red); }
+		.comment-actions a i, .comment-actions button i { margin-right: 4px; }
+
+		#comment-form { display: flex; gap: 10px; margin-top: 20px; margin-bottom: 30px; align-items: flex-start; }
+		#comment-form textarea { flex-grow: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; resize: vertical; min-height: 50px; font-family: 'SUIT', sans-serif; background: var(--white); transition: all 0.2s ease-in-out; }
+		#comment-form textarea:focus { outline: none; border-color: var(--primary); }
+		#comment-form button { padding: 0 20px; height: 50px; border: none; background: var(--primary); color: var(--white); border-radius: 12px; cursor: pointer; font-weight: 600; transition: background 0.2s, transform 0.2s; }
+		#comment-form button:hover { background: var(--primary-dark); }
+		
+        .report-modal .modal-content { background-color: var(--card-bg); border-radius: 24px; border: 1px solid var(--border-color); box-shadow: 0 10px 40px rgba(93, 64, 55, 0.2); }
+        .report-modal .modal-header { border-bottom: none; padding: 1.5rem 2rem 0.5rem; }
+        .report-modal .modal-title { font-size: 1.5rem; font-weight: 800; color: var(--text-primary); }
+        .report-modal .btn-close { opacity: 0.7; }
+        .report-modal .modal-body { padding: 1rem 2rem 2rem; }
+        .report-modal .form-label { font-weight: 600; color: var(--text-secondary); font-size: 0.9rem; }
+        .report-modal .form-select, .report-modal .form-control { background-color: transparent; border: none; border-bottom: 2px solid var(--border-color); border-radius: 0; padding: 12px 4px; font-weight: 500; box-shadow: none; }
+        .report-modal .form-select:focus, .report-modal .form-control:focus { border-color: var(--primary); }
+        .report-modal .modal-footer { border-top: none; background-color: transparent; padding: 0 2rem 2rem; flex-direction: column; gap: 0.5rem; }
+        .report-modal .modal-footer .btn-primary { background: var(--accent-red); box-shadow: 0 4px 12px rgba(200, 126, 126, 0.3); width: 100%; padding: 14px; font-size: 1rem; font-weight: 700; }
+        .report-modal .modal-footer .btn-primary:hover { background: var(--accent-red-dark); }
+        .report-modal .modal-footer .btn-secondary { display: none; }
+
+		@media (max-width: 991px) {
+			.custom-container {
+				margin: 1.5rem auto;
+				padding: 0 1rem;
+			}
+			.post-container {
+				padding: 2rem 1.5rem;
+			}
+		}
+		@media (max-width: 768px) {
+			.custom-container {
+                margin: 1rem auto;
+                padding: 0 0.75rem;
+            }
+			.post-container { padding: 1.5rem 1rem; }
+			.post-header .post-title { font-size: 22px; }
+			.post-meta { flex-wrap: wrap; gap: 10px; }
+			.btn-report { top: 20px; right: 1rem; }
+			.post-navigation-section { flex-wrap: nowrap; justify-content: space-between; padding: 15px 0; }
+			.post-navigation-section .reaction-text { display: none; }
+			.reaction-btn { padding: 10px 18px; font-size: 14px; }
+			.post-actions-footer { flex-direction: column; align-items: center; gap: 10px; }
+			.btn-list { display: none; }
+			.post-actions { display: flex; width: auto; justify-content: center; }
+			#comment-form { flex-direction: column; }
+			#comment-form textarea, #comment-form button { width: 100%; }
+		}
+	</style>
+</head>
+			
+<body>
+	<div th:replace="~{include/navibar :: header-nav}"></div>
+	
+	<div class="custom-container">
+		<div class="post-container">
+			<a href="#" class="btn-report"
+			   data-bs-toggle="modal"
+			   data-bs-target="#reportModal"
+			   th:attr="data-report-type='POST', data-report-target-id=${post.id}">
+				<i class="fa-solid fa-flag"></i> <span>신고</span>
+			</a>
+			<div class="post-header">
+				<h1 class="post-title" th:text="${post.title}">게시글 제목이 여기에 표시됩니다.</h1>
+				<div class="post-meta">
+					<span><i class="fa-regular fa-user"></i> <span th:text="${post.writerNickname}">작성자</span></span>
+					<span><i class="fa-regular fa-clock"></i> <span
+							th:text="${#temporals.format(post.createdAt, 'yyyy.MM.dd HH:mm')}">2025.01.01 10:00</span></span>
+					<span><i class="fa-regular fa-eye"></i> <span th:text="${post.viewCount}">0</span></span>
+				</div>
+			</div>
+
+			<div class="post-content" th:utext="${post.content}"></div>
+			
+			<div class="post-navigation-section">
+				<a th:if="${post.prev != null}" th:href="@{|/freeboard/${post.prev}|}" class="btn-prev"><i class="bi bi-chevron-left"></i></a>
+				<div th:unless="${post.prev != null}" class="nav-placeholder"></div>
+				<div class="reaction-buttons-group">
+					<button class="reaction-btn like-btn" id="likeBtn" th:classappend="${reaction['userReaction'] != null and reaction.userReaction == 1} ? 'active' : ''" onclick="toggleReaction(1)">
+						<i th:class="${reaction['userReaction'] != null and reaction.userReaction == 1} ? 'fa-solid fa-thumbs-up' : 'fa-regular fa-thumbs-up'"></i>
+						<span class="reaction-text">좋아요</span>
+						<span id="like-count" class="reaction-count" th:text="${reaction.likeCount} ?: 0">0</span>
+					</button>
+					<button class="reaction-btn dislike-btn" id="dislikeBtn" th:classappend="${reaction['userReaction'] != null and reaction.userReaction == 2} ? 'active' : ''" onclick="toggleReaction(2)">
+						<i th:class="${reaction != null and reaction['userReaction'] != null and reaction.userReaction == 2} ? 'fa-solid fa-thumbs-down' : 'fa-regular fa-thumbs-down'"></i>
+						<span class="reaction-text">싫어요</span>
+						<span id="dislike-count" class="reaction-count" th:text="${reaction.dislikeCount} ?: 0">0</span>
+					</button>
+				</div>
+				<a th:if="${post.next != null}" th:href="@{|/freeboard/${post.next}|}" class="btn-next"><i class="bi bi-chevron-right"></i></a>
+				<div th:unless="${post.next != null}" class="nav-placeholder"></div>
+			</div>
+			
+			<div class="post-actions-footer">
+				<a th:href="@{/freeboard}" class="btn-list">목록으로</a>
+				<div class="post-actions" th:if="${currentUserId != 0 and currentUserId == post.writer}">
+					<a th:href="@{|/freeboard/edit/${post.id}|}" class="btn-edit">수정</a>
+					<a th:href="@{|/freeboard/delete/${post.id}|}" class="btn-delete"
+						onclick="event.preventDefault(); showModal('confirm', '삭제 확인', '정말로 삭제하시겠습니까?', () => { location.href = this.href; });">삭제</a>
+				</div>
+			</div>
+
+			<div class="comment-section">
+				<h2 class="comment-header">댓글 <span th:text="${#lists.size(comments)}">0</span>개</h2>
+				<form id="comment-form">
+					<input type="hidden" id="freeboardId" name="freeboard" th:value="${post.id}">
+					<textarea id="commentContent" name="content" placeholder="댓글을 입력하세요..." required></textarea>
+					<button type="submit" id="submitCommentBtn">등록</button>
+				</form>
+				<ul id="comment-list">
+					<li class="comment-item" th:each="comment : ${comments}" th:id="|comment-${comment.id}|"
+						th:attr="data-writer-id=${comment.writer}">
+						<div class="comment-avatar"></div>
+						<div class="comment-body">
+							<div class="comment-info">
+								<span class="comment-author" th:text="${comment.nickname}">익명</span>
+								<span class="comment-time"
+									th:text="${#temporals.format(comment.createdAt, 'yyyy.MM.dd HH:mm')}"></span>
+							</div>
+							<div class="comment-content" th:text="${comment.content}"></div>
+							<div class="comment-actions">
+								<a href="#" class="comment-delete-btn"
+									th:if="${currentUserId != 0 and currentUserId == comment.writer}"
+									th:attr="data-comment-id=${comment.id}"
+									onclick="deleteComment(this.getAttribute('data-comment-id')); return false;">
+									<i class="fa-regular fa-trash-can"></i> 삭제
+								</a>
+								<a href="#" class="btn-report-small"
+								   data-bs-toggle="modal"
+								   data-bs-target="#reportModal"
+								   th:attr="data-report-type='COMMENT', data-report-target-id=${comment.id}">
+									<i class="fa-solid fa-flag"></i> 신고
+								</a>
+							</div>
+						</div>
+					</li>
+				</ul>
+			</div>
+		</div>
+	</div>
+
+	<div th:replace="~{fragments/reportModal :: reportModal}"></div>			
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+		    const commentForm = document.getElementById('comment-form');
+		    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+		    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+		    // 1. 댓글 등록 로직
+		    if (commentForm) {
+		        commentForm.addEventListener('submit', function(e) {
+		            e.preventDefault();
+		            
+		            const freeboardId = document.getElementById('freeboardId').value;
+		            const content = document.getElementById('commentContent').value;
+
+		            if (!content.trim()) {
+		                showModal('warning', '알림', '댓글 내용을 입력해주세요.');
+		                return;
+		            }
+
+		            const data = {
+		                freeboard: parseInt(freeboardId),
+		                content: content,
+		                parent: 0
+		            };
+
+		            fetch('/freeboard/comment', {
+		                method: 'POST',
+		                headers: {
+		                    'Content-Type': 'application/json',
+		                    [csrfHeader]: csrfToken
+		                },
+		                body: JSON.stringify(data)
+		            })
+		            .then(response => {
+		                if (response.ok) {
+		                    location.reload(); // 성공 시 페이지 새로고침
+		                } else {
+		                    response.text().then(text => alert(text));
+		                }
+		            })
+		            .catch(err => console.error('Comment Error:', err));
+		        });
+		    }
+		});
+
+		// 2. 댓글 삭제 로직 (전역 함수로 선언)
+		function deleteComment(commentId) {
+		    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+		    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+		    showModal('confirm', '삭제 확인', '정말로 이 댓글을 삭제하시겠습니까?', () => {
+		        fetch(`/freeboard/comment/${commentId}`, {
+		            method: 'DELETE',
+		            headers: {
+		                [csrfHeader]: csrfToken
+		            }
+		        })
+		        .then(response => {
+		            if (response.ok) {
+		                location.reload();
+		            } else {
+		                response.text().then(text => alert(text));
+		            }
+		        })
+		        .catch(err => console.error('Delete Error:', err));
+		    });
+		}
+		
+		function toggleReaction(reactionType) {
+		    const freeboardId = document.getElementById("freeboardId").value; // hidden input ID
+		    const likeBtn = document.getElementById("likeBtn");
+		    const dislikeBtn = document.getElementById("dislikeBtn");
+		    
+		    const isLiked = likeBtn.classList.contains("active");
+		    const isDisliked = dislikeBtn.classList.contains("active");
+		    
+		    let url = "";
+		    let method = "";
+		    // XML 파라미터명인 freeboardId로 전송
+		    const bodyData = { freeboardId: freeboardId, reactionType: reactionType };
+
+		    if (reactionType === 1) { // 좋아요 클릭
+		        if (isLiked) { url = "/freeboard/api/deleteReaction"; method = "DELETE"; }
+		        else if (isDisliked) { url = "/freeboard/api/updateReaction"; method = "PUT"; }
+		        else { url = "/freeboard/api/insertReaction"; method = "POST"; }
+		    } else { // 싫어요 클릭
+		        if (isDisliked) { url = "/freeboard/api/deleteReaction"; method = "DELETE"; }
+		        else if (isLiked) { url = "/freeboard/api/updateReaction"; method = "PUT"; }
+		        else { url = "/freeboard/api/insertReaction"; method = "POST"; }
+		    }
+
+		    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+		    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+		    fetch(url, {
+		        method: method,
+		        headers: {
+		            "Content-Type": "application/json",
+		            [csrfHeader]: csrfToken
+		        },
+		        body: JSON.stringify(bodyData)
+		    })
+		    .then(res => res.json())
+		    .then(data => {
+		        // UI 업데이트
+		        document.getElementById("like-count").innerText = data.likeCount;
+		        document.getElementById("dislike-count").innerText = data.dislikeCount;
+
+		        // 버튼 상태 및 아이콘 클래스 토글
+		        likeBtn.classList.toggle("active", data.userReaction === 1);
+		        dislikeBtn.classList.toggle("active", data.userReaction === 2);
+		        
+		        likeBtn.querySelector("i").className = (data.userReaction === 1) ? "fa-solid fa-thumbs-up" : "fa-regular fa-thumbs-up";
+		        dislikeBtn.querySelector("i").className = (data.userReaction === 2) ? "fa-solid fa-thumbs-down" : "fa-regular fa-thumbs-down";
+		    })
+		    .catch(err => console.error("Reaction Error:", err));
+		}
+	</script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/report.js"></script>
+    <div th:replace="~{include/bottom-navbar :: bottom-nav}"></div>
+</body>
+</html>

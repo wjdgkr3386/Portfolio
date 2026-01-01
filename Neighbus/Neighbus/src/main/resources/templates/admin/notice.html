@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(pageTitle='공지사항 관리', activeMenu='notice', content=~{:: #notice-content-wrapper})}">
+<body>
+    <div id="notice-content-wrapper">
+        <div class="page-header">
+            <h1>공지사항 관리</h1>
+            <p>사이트의 공지사항을 작성하고 관리합니다.</p>
+        </div>
+
+        <div class="content-panel">
+            <div class="search-controls">
+                <input type="text" id="search-input" placeholder="제목으로 검색...">
+                <button class="btn btn-primary" onclick="showWriteModal()"><i class="fa-solid fa-pen-to-square"></i> 새 공지사항 작성</button>
+            </div>
+            <div class="table-wrapper" style="overflow-x: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th id="sort-by-id" style="cursor: pointer;">ID <i class="fa-solid fa-sort"></i></th>
+                            <th>제목</th>
+                            <th>작성자</th>
+                            <th id="sort-by-date" style="cursor: pointer;">작성일 <i class="fa-solid fa-sort"></i></th>
+                            <th class="actions">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody id="notice-table-body">
+                        <!-- JS로 채워짐 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Write/Edit Modal -->
+        <div id="writeModal" class="modal">
+            <div class="modal-content">
+                <form id="writeForm">
+                    <div class="modal-header">
+                        <h2 id="modal-title">새 공지사항 작성</h2>
+                        <button type="button" class="close-button" onclick="closeAdminModal('writeModal')">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="notice-id">
+                        <div style="margin-bottom: 1rem;">
+                            <label for="notice-title" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">제목</label>
+                            <input type="text" id="notice-title" required class="form-control">
+                        </div>
+                        <div>
+                            <label for="notice-content" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">내용</label>
+                            <textarea id="notice-content" rows="10" required class="form-control" style="resize: vertical;"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-modal" onclick="closeAdminModal('writeModal')">취소</button>
+                        <button type="submit" class="btn btn-primary btn-modal">저장</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            let notices = [];
+            let filteredNotices = [];
+            let currentSortField = 'id';
+            let sortOrders = {
+                'id': 'desc',
+                'date': 'desc'
+            };
+
+            document.addEventListener('DOMContentLoaded', function() {
+                loadNotices();
+                document.getElementById('search-input').addEventListener('input', applyFiltersAndSort);
+                document.getElementById('writeForm').addEventListener('submit', handleFormSubmit);
+
+                document.getElementById('sort-by-id').addEventListener('click', () => handleSort('id'));
+                document.getElementById('sort-by-date').addEventListener('click', () => handleSort('date'));
+            });
+
+            function handleSort(field) {
+                sortOrders[field] = sortOrders[field] === 'desc' ? 'asc' : 'desc';
+                currentSortField = field;
+                applyFiltersAndSort();
+            }
+
+            async function loadNotices() {
+                try {
+                    const response = await fetch('/api/admin/notices');
+                    const result = await response.json();
+                    if (result.status === 1) {
+                        notices = result.data.map(notice => ({
+                            id: notice.id,
+                            title: notice.title,
+                            date: notice.created_at ? new Date(notice.created_at) : null, // Date 객체로 저장
+                            content: notice.content,
+                            writer_name: notice.writer_name
+                        }));
+                        applyFiltersAndSort();
+                    } else {
+                        console.error('공지사항 목록 조회 실패:', result.message);
+                    }
+                } catch (error) {
+                    console.error('Error loading notices:', error);
+                }
+            }
+
+            function renderTable() {
+                const tableBody = document.getElementById('notice-table-body');
+                tableBody.innerHTML = '';
+                if (filteredNotices.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 3rem;">공지사항이 없습니다.</td></tr>';
+                    return;
+                }
+                filteredNotices.forEach(notice => {
+                    const row = `
+                        <tr>
+                            <td>${notice.id}</td>
+                            <td><strong>${notice.title}</strong></td>
+                            <td>${notice.writer_name || '관리자'}</td>
+                            <td>${notice.date ? notice.date.toISOString().slice(0, 10) : '-'}</td>
+                            <td class="actions">
+                                <button class="btn btn-secondary" onclick="showWriteModal(${notice.id})"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn btn-danger" onclick="deleteNotice(${notice.id})"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            }
+
+            function applyFiltersAndSort() {
+                const searchTerm = document.getElementById('search-input').value.toLowerCase();
+                filteredNotices = notices.filter(n => n.title.toLowerCase().includes(searchTerm));
+
+                // Sort logic
+                filteredNotices.sort((a, b) => {
+                    const field = currentSortField;
+                    const order = sortOrders[field];
+                    
+                    let valA = a[field];
+                    let valB = b[field];
+
+                    if (valA < valB) {
+                        return order === 'asc' ? -1 : 1;
+                    }
+                    if (valA > valB) {
+                        return order === 'asc' ? 1 : -1;
+                    }
+                    return 0;
+                });
+
+                renderTable();
+            }
+
+            function showWriteModal(noticeId = null) {
+                const modalTitle = document.getElementById('modal-title');
+                const form = document.getElementById('writeForm');
+                form.reset();
+                
+                if (noticeId !== null) {
+                    modalTitle.textContent = '공지사항 수정';
+                    const notice = notices.find(n => n.id === noticeId);
+                    if (notice) {
+                        document.getElementById('notice-id').value = notice.id;
+                        document.getElementById('notice-title').value = notice.title;
+                        document.getElementById('notice-content').value = notice.content;
+                    }
+                } else {
+                    modalTitle.textContent = '새 공지사항 작성';
+                    document.getElementById('notice-id').value = '';
+                }
+                document.getElementById('writeModal').style.display = 'block';
+            }
+
+            async function handleFormSubmit(e) {
+                e.preventDefault();
+                const noticeId = document.getElementById('notice-id').value;
+                const noticeData = {
+                    title: document.getElementById('notice-title').value,
+                    content: document.getElementById('notice-content').value
+                };
+                const isUpdate = noticeId !== '';
+                const url = isUpdate ? '/api/admin/notices/update' : '/api/admin/notices/register';
+                if (isUpdate) noticeData.id = noticeId;
+
+                try {
+                    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+                    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+                    const headers = { 'Content-Type': 'application/json' };
+                    headers[csrfHeader] = csrfToken;
+
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify(noticeData)
+                    });
+                    const result = await response.json();
+                    if (result.status === 1) {
+                        showModal('success', isUpdate ? '수정 완료' : '작성 완료', result.message, () => {
+                            closeAdminModal('writeModal');
+                            loadNotices();
+                        });
+                    } else {
+                        showModal('error', '저장 실패', result.message);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showModal('error', '오류 발생', '공지사항 처리 중 오류가 발생했습니다.');
+                }
+            }
+
+            async function deleteNotice(noticeId) {
+                showModal('confirm', '공지 삭제', '정말로 이 공지사항을 삭제하시겠습니까?', async () => {
+                    try {
+                        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+                        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+                        const headers = { 'Content-Type': 'application/json' };
+                        headers[csrfHeader] = csrfToken;
+
+                        const response = await fetch('/api/admin/notices/delete', {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify({ id: noticeId })
+                        });
+                        const result = await response.json();
+                        if (result.status === 1) {
+                            showModal('success', '삭제 완료', result.message, () => {
+                                loadNotices();
+                            });
+                        } else {
+                            showModal('error', '삭제 실패', result.message);
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        showModal('error', '오류 발생', '공지사항 삭제 중 오류가 발생했습니다.');
+                    }
+                });
+            }
+
+            function closeAdminModal(modalId) {
+                document.getElementById(modalId).style.display = 'none';
+            }
+        </script>
+    </div>
+</body>
+</html>

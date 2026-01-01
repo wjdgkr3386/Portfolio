@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>새 모임 만들기 - NEIGHBUS</title>
+
+    <link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/css/navibar.css">
+    <link rel="stylesheet" href="/css/bottom-navbar.css">
+    <link rel="stylesheet" href="/css/custom-modal.css">
+    <script src="/js/custom-modal.js"></script>
+
+    <style>
+        :root {
+            --primary: #A67C52;
+            --primary-dark: #8D6E63;
+            --primary-light: #C9A88A;
+            --bg-ivory: #FFF8F0;
+            --bg-warm: #FFF5EB;
+            --bg-cream: #FAF0E6;
+            --card-bg: #FFFBF7;
+            --text-primary: #5D4037;
+            --text-secondary: #8D6E63;
+            --text-light: #A1887F;
+            --border-color: #E8D7C3;
+            --white: #FFFFFF;
+            --shadow-color: rgba(166, 124, 82, 0.1);
+            --shadow-hover: rgba(166, 124, 82, 0.2);
+        }
+
+        body {
+            font-family: 'SUIT', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            background: linear-gradient(165deg, var(--bg-ivory) 0%, var(--bg-warm) 50%, var(--bg-cream) 100%);
+            color: var(--text-primary);
+            padding-top: 100px;
+            padding-bottom: 40px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+        }
+
+        .form-container {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px var(--shadow-color);
+            margin-bottom: 2rem;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .page-header .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .form-label {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .required {
+            color: var(--primary);
+            margin-left: 4px;
+        }
+
+        .form-control,
+        .form-select {
+            padding: 0.85rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background-color: var(--white);
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(166, 124, 82, 0.15);
+            background-color: var(--white);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        #map {
+            width: 100%;
+            height: 350px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-top: 1rem;
+            box-shadow: 0 4px 15px var(--shadow-color);
+        }
+
+        .btn-search {
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 0 12px 12px 0;
+            padding: 0.85rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .btn-search:hover {
+            background: var(--primary-dark);
+            color: var(--white);
+        }
+
+        .input-group .form-control {
+            border-radius: 12px 0 0 12px;
+        }
+
+        .btn-custom-secondary,
+        .btn-custom-primary {
+            padding: 0.75rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-custom-secondary {
+            background: var(--white);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-custom-secondary:hover {
+            background: var(--bg-warm);
+            border-color: var(--primary-light);
+            color: var(--text-primary);
+        }
+
+        .btn-custom-primary {
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            box-shadow: 0 4px 12px rgba(166, 124, 82, 0.2);
+        }
+
+        .btn-custom-primary:hover {
+            background: var(--primary-dark);
+            color: var(--white);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(166, 124, 82, 0.3);
+        }
+
+        /* Search Results */
+        .search-results {
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-top: 10px;
+            background: var(--white);
+            box-shadow: 0 4px 15px var(--shadow-color);
+        }
+        .search-results.active {
+            display: block;
+        }
+        .search-results::-webkit-scrollbar {
+            width: 6px;
+        }
+        .search-results::-webkit-scrollbar-thumb {
+            background-color: var(--border-color);
+            border-radius: 10px;
+        }
+        .search-result-item {
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+        .search-result-item:hover {
+            background: var(--bg-warm);
+        }
+        .search-result-name {
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 0.3rem;
+            color: var(--text-primary);
+        }
+        .search-result-address {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .d-grid {
+            gap: 1.5rem !important;
+        }
+
+        /* Mobile & Tablet Responsive */
+        @media (max-width: 991px) {
+            body {
+                padding-bottom: calc(80px + env(safe-area-inset-bottom));
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding-top: 80px;
+                padding-bottom: calc(90px + env(safe-area-inset-bottom));
+            }
+
+            .container {
+                padding: 0 15px;
+            }
+
+            .page-header {
+                margin-bottom: 1.5rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .page-header .subtitle {
+                font-size: 0.95rem;
+            }
+
+            .form-container {
+                padding: 1.5rem;
+                border-radius: 16px;
+            }
+
+            .form-label {
+                font-size: 0.9rem;
+            }
+
+            .form-control,
+            .form-select {
+                padding: 0.75rem 0.9rem;
+                font-size: 0.9rem;
+            }
+
+            textarea.form-control {
+                min-height: 100px;
+            }
+
+            #map {
+                height: 280px;
+            }
+
+            .btn-search {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .btn-custom-secondary,
+            .btn-custom-primary {
+                padding: 0.7rem 1.5rem;
+                font-size: 0.9rem;
+                width: 100%;
+            }
+
+            .d-flex.gap-3 {
+                flex-direction: column;
+                gap: 0.75rem !important;
+            }
+
+            .search-result-name {
+                font-size: 0.9rem;
+            }
+
+            .search-result-address {
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .form-container {
+                padding: 1.25rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.6rem;
+            }
+
+            #map {
+                height: 250px;
+            }
+
+            .d-grid {
+                gap: 1.25rem !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+	<div th:replace="~{include/navibar}"></div>
+
+    <div class="container mb-5">
+        <div class="page-header">
+            <h1>새 모임 만들기</h1>
+            <p class="subtitle">동아리 멤버들과 함께할 즐거운 시간을 계획해보세요.</p>
+        </div>
+
+        <div class="form-container">
+            <form th:action="@{/recruitment/new}" th:object="${recruitmentDTO}" method="POST">
+                <input type="hidden" th:field="*{clubId}">
+
+                <div class="d-grid gap-4">
+                    <div class="form-group">
+                        <label for="title" class="form-label">모임 제목 <span class="required">*</span></label>
+                        <input type="text" class="form-control" id="title" th:field="*{title}" placeholder="모임의 주제가 잘 드러나게 지어주세요" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="content" class="form-label">모임 내용 <span class="required">*</span></label>
+                        <textarea class="form-control" id="content" th:field="*{content}" rows="5" placeholder="어떤 활동을 하는지, 준비물은 무엇인지 자세히 적어주세요." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">만날 장소 <span class="required">*</span></label>
+                        <div class="input-group mb-2">
+                            <input type="text" id="searchKeyword" class="form-control" placeholder="장소명을 입력하세요 (예: 강남역 스타벅스)">
+                            <button type="button" class="btn btn-search" onclick="searchPlaces()">
+                                <i class="bi bi-search"></i> 검색
+                            </button>
+                        </div>
+                        <div id="searchResults" class="search-results"></div>
+                        <input type="text" class="form-control mt-3 mb-2" id="address" th:field="*{address}" placeholder="지도에서 장소를 클릭하거나 검색 결과를 선택해주세요" readonly required>
+                        <div id="map"></div>
+                        <input type="hidden" id="latitude" name="latitude">
+                        <input type="hidden" id="longitude" name="longitude">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="meetingDate" class="form-label">모임 날짜 및 시간 <span class="required">*</span></label>
+                                <input type="datetime-local" class="form-control" id="meetingDate" th:field="*{meetingDate}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="maxUser" class="form-label">최대 인원 <span class="required">*</span></label>
+                                <input type="number" class="form-control" id="maxUser" th:field="*{maxUser}" min="2" placeholder="최소 2명 이상" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-3 mt-5 pt-4 border-top" style="border-color: var(--border-color) !important;">
+                    <a href="javascript:history.back()" class="btn btn-custom-secondary text-decoration-none">
+                        <i class="bi bi-x-lg me-1"></i> 취소
+                    </a>
+                    <button type="submit" class="btn btn-custom-primary">
+                        <i class="bi bi-check-lg me-1"></i> 모임 개설하기
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script th:src="@{'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&libraries=places&callback=initMap'}" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        let map;
+        let marker;
+        let geocoder;
+        let placesService;
+        let searchResultsData = [];
+
+        function initMap() {
+            const defaultLocation = { lat: 37.566826, lng: 126.9786567 }; // 서울 시청
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: defaultLocation,
+                zoom: 15
+            });
+
+            marker = new google.maps.Marker({
+                position: defaultLocation,
+                map: map,
+                draggable: true
+            });
+
+            geocoder = new google.maps.Geocoder();
+            placesService = new google.maps.places.PlacesService(map);
+
+            map.addListener('click', (e) => {
+                placeMarkerAndPanTo(e.latLng, map);
+                geocodeLatLng(e.latLng);
+            });
+
+            marker.addListener('dragend', (e) => {
+                geocodeLatLng(e.latLng);
+            });
+
+            document.getElementById('searchKeyword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    searchPlaces();
+                }
+            });
+        }
+
+        function placeMarkerAndPanTo(latLng, map) {
+            marker.setPosition(latLng);
+            map.panTo(latLng);
+        }
+
+        function geocodeLatLng(latlng) {
+            geocoder.geocode({ location: latlng }, (results, status) => {
+                if (status === 'OK') {
+                    if (results[0]) {
+                        document.getElementById('address').value = results[0].formatted_address;
+                        document.getElementById('latitude').value = latlng.lat();
+                        document.getElementById('longitude').value = latlng.lng();
+                    } else {
+                        showModal('error', '주소 변환 실패', '해당 위치의 주소를 찾을 수 없습니다.');
+                    }
+                } else {
+                    showModal('error', 'Geocoder 실패', 'Geocoder failed due to: ' + status);
+                }
+            });
+        }
+
+        function searchPlaces() {
+            const keyword = document.getElementById('searchKeyword').value.trim();
+            if (!keyword) {
+                showModal('warning', '입력 필요', '장소명을 입력해주세요!');
+                return;
+            }
+
+            const request = {
+                query: keyword,
+                fields: ['name', 'geometry', 'formatted_address', 'place_id'],
+            };
+
+            placesService.textSearch(request, (results, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+                    displayPlaces(results);
+                } else {
+                    showModal('info', '검색 결과 없음', '검색 결과가 없습니다.');
+                }
+            });
+        }
+
+        function displayPlaces(places) {
+            const resultsContainer = document.getElementById('searchResults');
+            resultsContainer.innerHTML = '';
+            searchResultsData = places; // Store results globally
+
+            if (places.length === 0) {
+                resultsContainer.innerHTML = '<div style="padding:20px;text-align:center;color:#64748B;">검색 결과가 없습니다.</div>';
+                resultsContainer.classList.add('active');
+                return;
+            }
+
+            places.forEach((place, index) => {
+                const item = document.createElement('div');
+                item.className = 'search-result-item';
+                item.innerHTML = `
+                    <div class="search-result-name">${place.name}</div>
+                    <div class="search-result-address">${place.formatted_address}</div>
+                `;
+                item.onclick = () => selectPlace(index);
+                resultsContainer.appendChild(item);
+            });
+            resultsContainer.classList.add('active');
+        }
+
+        function selectPlace(index) {
+            const place = searchResultsData[index];
+            if (!place || !place.geometry || !place.geometry.location) return;
+
+            const location = place.geometry.location;
+            map.setCenter(location);
+            placeMarkerAndPanTo(location, map);
+
+            document.getElementById('address').value = place.formatted_address;
+            document.getElementById('latitude').value = location.lat();
+            document.getElementById('longitude').value = location.lng();
+
+            // Hide search results
+            const resultsContainer = document.getElementById('searchResults');
+            resultsContainer.innerHTML = '';
+            resultsContainer.classList.remove('active');
+        }
+
+        function updateMinDateTime() {
+            const meetingDateInput = document.getElementById('meetingDate');
+            const now = new Date();
+            
+            // 현재 시간에서 5분 더하기
+            now.setMinutes(now.getMinutes() + 5);
+
+            // 로컬 타임존에 맞춰 ISO 문자열 생성 후, 초와 밀리초 부분 제거
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+
+            const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+            
+            meetingDateInput.min = minDateTime;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateMinDateTime(); // 페이지 로드 시 즉시 실행
+            setInterval(updateMinDateTime, 60000); // 1분마다 최소 시간 갱신
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+    <style>
+    /* 알림 모달 전용 스타일 */
+    #notificationModal .modal-header {
+        background-color: #FFF5EB;
+        border-bottom: 1px solid #E8D7C3;
+        /* 모바일에서 한 줄 유지를 위한 설정 */
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+    }
+
+    #notificationModal .modal-title {
+        color: #5D4037;
+        font-weight: 700;
+        font-size: 1.1rem;
+        white-space: nowrap; /* 제목 줄바꿈 방지 */
+        overflow: hidden;
+        text-overflow: ellipsis; /* 너무 길면 ... 처리 */
+    }
+
+    #alarmBadge {
+        background-color: #C87E7E;
+        color: white;
+        border: 2px solid white;
+    }
+
+    /* 버튼들이 붙어 있게 처리 */
+    .header-buttons {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0; /* 버튼 영역이 좁아지지 않게 고정 */
+    }
+    </style>
+
+<div th:fragment="notificationModal" class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+			<div class="modal-header d-flex justify-content-between align-items-center">
+			    <h5 class="modal-title mb-0" id="notificationModalLabel">알림</h5>
+			    
+			    <div class="d-flex align-items-center">
+			        <button type="button" class="btn btn-sm btn-outline-danger me-2" 
+			                style="white-space: nowrap;" 
+			                onclick="deleteAllNotifications()">모두 지우기</button>
+			        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			    </div>
+			</div>
+			<!--알림 동적 추가-->
+            <div class="modal-body p-0">
+                <ul class="list-group list-group-flush" id="notificationList">
+                    </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
