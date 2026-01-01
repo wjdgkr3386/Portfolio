@@ -1,0 +1,20 @@
+npm install @react-navigation/native @react-navigation/native-stack
+npm install react-native-screens react-native-safe-area-context
+npm install react-native-calendars
+
+npm install
+npm install @react-native-picker/picker
+npm install react-native-image-picker
+npm install react-native-vector-icons
+npm install @react-native-async-storage/async-storage
+npm install react-native-maps
+npm install react-native-render-html react-native-webview
+npm install @stomp/stompjs text-encoding
+npm install --save-dev @types/text-encoding
+npm install react-native-blob-util
+
+npx react-native start
+npx react-native run-android
+
+# 안드로이드 에뮬 강제 실행
+[SDK 에뮬주소] @Small_Phone -gpu swiftshader_indirect
