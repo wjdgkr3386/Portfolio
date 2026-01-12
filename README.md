@@ -6,5 +6,5 @@
 
 ### 포트폴리오 간단한 설명
 Neighbus : 비슷한 취미를 가진 사람을 가까운 지역에서 연결해주는 지역 기반 커뮤니티 플랫폼  
-neighbusapp : Neighbus 모바일 앱 프로젝트
+neighbusapp : Neighbus 모바일 앱 프로젝트  
 devgru : 개발자 ERP 시스템
