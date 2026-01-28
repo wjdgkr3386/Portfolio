@@ -3,7 +3,7 @@
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=24&height=250&section=header&text=NEIGHBUS%20APP&fontSize=80&animation=fadeIn&fontAlignY=38&desc=Connecting%20Neighbors,%20Building%20Community&descAlignY=55&descAlign=50" width="100%"/>
 
-<br/> 
+<br/>
 
 ### 이웃과 함께 성장하는 커뮤니티 플랫폼 (React Native)
 
@@ -20,7 +20,10 @@
 
 </div>
 
----
+---  
+## APK 설치
+https://github.com/wjdgkr3386/neighbusapp/releases
+
 <br/><br/>
 
 ## 프로젝트 개요
