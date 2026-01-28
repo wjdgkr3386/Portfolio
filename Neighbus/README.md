@@ -1,10 +1,9 @@
-<a href="https://neighbus.kro.kr/" target="_blank" rel="noopener noreferrer">
-https://neighbus.kro.kr/
-</a>
-  
 <a id="top"></a>
 <div align="center">
 
+홈페이지  
+https://neighbus.kro.kr
+  
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=12&height=250&section=header&text=NEIGHBUS&fontSize=80&animation=fadeIn&fontAlignY=38&desc=Connecting%20Neighbors,%20Building%20Community&descAlignY=55&descAlign=50" width="100%"/>
 
 <br/> 
