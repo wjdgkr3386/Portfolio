@@ -1,5 +1,5 @@
-<a href="[https://github.com/happycat12389](https://neighbus.kro.kr/)" target="_blank">
-  https://neighbus.kro.kr/
+<a href="https://neighbus.kro.kr/" target="_blank" rel="noopener noreferrer">
+https://neighbus.kro.kr/
 </a>
   
 <a id="top"></a>
